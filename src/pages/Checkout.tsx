@@ -178,16 +178,16 @@ export default function Checkout() {
         <p className="text-gray-600 mb-8">숙명여자대학교 창학120주년 기념 전야제 참가비</p>
 
         {/* Amount Display */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-700 font-semibold">결제 금액</span>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+          <div className="mb-2 sm:mb-0">
+            <span className="text-gray-700 font-semibold block sm:inline">결제 금액</span>
             {priceLabel && (
-              <span className="text-sm text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded">
+              <span className="mt-1 sm:mt-0 sm:ml-2 inline-block text-sm text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded">
                 {priceLabel} 적용
               </span>
             )}
           </div>
-          <span className="text-3xl font-bold text-blue-700">{amount.toLocaleString()}원</span>
+          <span className="text-3xl font-bold text-blue-700 self-end sm:self-auto">{amount.toLocaleString()}원</span>
         </div>
 
         {/* Payment Method Selection */}

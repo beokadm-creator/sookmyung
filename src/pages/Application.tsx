@@ -417,7 +417,7 @@ export default function Application() {
                           name="verificationCode"
                           value={formData.verificationCode}
                           onChange={(e) => setFormData({ ...formData, verificationCode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-                          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="flex-1 min-w-0 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                           placeholder="인증번호 6자리"
                           maxLength={6}
                           inputMode="numeric"
@@ -427,7 +427,7 @@ export default function Application() {
                           type="button"
                           onClick={handleVerifyCode}
                           disabled={isVerifying || formData.verificationCode.length !== 6}
-                          className="px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 flex-shrink-0"
+                          className="px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 flex-shrink-0 whitespace-nowrap min-w-[80px]"
                         >
                           확인
                         </button>
@@ -860,16 +860,16 @@ export default function Application() {
                   </h3>
 
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
                       <div>
-                        <span className="text-gray-700 font-semibold">총 결제 금액</span>
+                        <span className="text-gray-700 font-semibold block sm:inline">총 결제 금액</span>
                         {priceLabel && (
-                          <span className="ml-2 text-sm text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded">
+                          <span className="mt-1 sm:mt-0 sm:ml-2 inline-block text-sm text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded">
                             {priceLabel} 적용
                           </span>
                         )}
                       </div>
-                      <span className="text-3xl font-bold text-blue-700">{amount.toLocaleString()}원</span>
+                      <span className="text-3xl font-bold text-blue-700 self-end sm:self-auto">{amount.toLocaleString()}원</span>
                     </div>
                     <p className="text-sm text-gray-600 mt-3">
                       <CreditCard className="w-4 h-4 inline mr-1" />
