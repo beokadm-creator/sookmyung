@@ -255,9 +255,9 @@ export default function MyPage() {
                     <div className="flex items-start">
                       <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="font-medium text-yellow-900">탈퇴 신청 진행 중</p>
+                        <p className="font-medium text-yellow-900">결제 취소 진행 중</p>
                         <p className="text-sm text-yellow-700 mt-1">
-                          관리자 승인 대기 중입니다.
+                          결제 취소가 진행 중입니다.
                         </p>
                         <p className="text-xs text-yellow-600 mt-2">
                           신청일: {formatDate(withdrawalRequest.requested_at)}
