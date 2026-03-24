@@ -194,25 +194,7 @@ export const confirmPayment = functions.region('asia-northeast3').https.onReques
           });
         });
         
-        // Send Payment Success Alimtalk
-        if (userId) {
-          try {
-            const userDoc = await db.collection('users').doc(userId).get();
-            const userData = userDoc.data();
-            if (userData && userData.phone && userData.name) {
-              const alimtalkService = await getAlimtalkService();
-              await alimtalkService.sendPaymentSuccess(
-                userData.phone, 
-                userData.name, 
-                requestedAmount, 
-                orderId
-              );
-            }
-          } catch (alimtalkError) {
-            console.error('Failed to send payment success Alimtalk:', alimtalkError);
-            // Don't fail the payment confirmation if Alimtalk fails
-          }
-        }
+        // Payment Success Alimtalk removed intentionally per new requirement
 
         res.json({ success: true, paymentData });
       } else {
@@ -337,6 +319,34 @@ export const requestWithdrawal = functions.region('asia-northeast3').https.onCal
       status: 'pending',
       requested_at: admin.firestore.FieldValue.serverTimestamp(),
     });
+
+    // Send Refund Request Alimtalk
+    try {
+      if (userData && userData.phone && userData.name) {
+        const paymentsSnapshot = await db.collection('payments')
+          .where('user_id', '==', userId)
+          .where('status', '==', 'DONE')
+          .get();
+        let totalAmount = 0;
+        let orderId = withdrawalRef.id;
+        paymentsSnapshot.docs.forEach((doc: any) => {
+          totalAmount += doc.data().amount || 0;
+          if (doc.data().payment_key) orderId = doc.data().payment_key; // or anything else that signifies the order
+        });
+        
+        if (totalAmount > 0) {
+          const alimtalkService = await getAlimtalkService();
+          await alimtalkService.sendRefundRequest(
+            userData.phone,
+            userData.name,
+            totalAmount,
+            orderId
+          );
+        }
+      }
+    } catch (alimtalkError) {
+      console.error('Failed to send refund request Alimtalk:', alimtalkError);
+    }
 
     return {
       success: true,
@@ -464,7 +474,7 @@ export const processWithdrawal = functions.region('asia-northeast3').https.onCal
 
                   if (totalAmount > 0) {
                     const alimtalkService = await getAlimtalkService();
-                    await alimtalkService.sendPaymentCancellation(
+                    await alimtalkService.sendRefundComplete(
                       userData.phone,
                       userData.name,
                       totalAmount,
@@ -1127,7 +1137,7 @@ export const cancelPaymentByAdmin = functions.region('asia-northeast3').https.on
           const userData = userDoc.data();
           if (userData && userData.phone && userData.name) {
             const alimtalkService = await getAlimtalkService();
-            await alimtalkService.sendPaymentCancellation(
+            await alimtalkService.sendRefundComplete(
               userData.phone,
               userData.name,
               paymentData.amount || 0,

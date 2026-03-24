@@ -161,9 +161,9 @@ export default function Application() {
       }
     } catch (err: any) {
       console.error('Send code error:', err);
-      if (err.code === 'already-exists') {
-        setShowAlreadyRegistered(true);
-        setError('이미 등록된 전화번호입니다.');
+      if (err.code === 'already-exists' || (err.message && err.message.includes('이미 등록된'))) {
+        alert('이미 등록된 전화번호입니다. 로그인을 해주세요.');
+        navigate('/application-check');
       } else {
         setError(err.message || '인증번호 발송 중 오류가 발생했습니다.');
       }
@@ -458,6 +458,7 @@ export default function Application() {
                         maxLength={6}
                         disabled={!isVerified}
                         inputMode="numeric"
+                        autoComplete="new-password"
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">신청 내역 확인 시 사용될 비밀번호입니다. (숫자 6자리)</p>

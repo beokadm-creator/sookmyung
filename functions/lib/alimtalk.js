@@ -168,10 +168,10 @@ class NHNAlimTalkService {
             password: tempPassword
         });
     }
-    async sendPaymentSuccess(phone, name, amount, orderId) {
+    async sendRefundRequest(phone, name, amount, orderId) {
         const template = this.config.templates.payment;
         if (!template || !template.enabled) {
-            console.log('Payment success AlimTalk disabled or not configured');
+            console.log('Refund request AlimTalk disabled or not configured');
             return { success: true };
         }
         return this.send(template.templateId, phone, {
@@ -180,10 +180,10 @@ class NHNAlimTalkService {
             orderId: orderId
         });
     }
-    async sendPaymentCancellation(phone, name, amount, reason) {
+    async sendRefundComplete(phone, name, amount, reason) {
         const template = this.config.templates.cancel;
         if (!template || !template.enabled) {
-            console.log('Payment cancellation AlimTalk disabled or not configured');
+            console.log('Refund complete AlimTalk disabled or not configured');
             return { success: true };
         }
         return this.send(template.templateId, phone, {

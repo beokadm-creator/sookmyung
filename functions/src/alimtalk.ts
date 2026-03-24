@@ -209,10 +209,10 @@ export class NHNAlimTalkService {
     });
   }
 
-  async sendPaymentSuccess(phone: string, name: string, amount: number, orderId: string): Promise<AlimTalkResult> {
+  async sendRefundRequest(phone: string, name: string, amount: number, orderId: string): Promise<AlimTalkResult> {
     const template = this.config.templates.payment;
     if (!template || !template.enabled) {
-      console.log('Payment success AlimTalk disabled or not configured');
+      console.log('Refund request AlimTalk disabled or not configured');
       return { success: true };
     }
 
@@ -223,10 +223,10 @@ export class NHNAlimTalkService {
     });
   }
 
-  async sendPaymentCancellation(phone: string, name: string, amount: number, reason: string): Promise<AlimTalkResult> {
+  async sendRefundComplete(phone: string, name: string, amount: number, reason: string): Promise<AlimTalkResult> {
     const template = this.config.templates.cancel;
     if (!template || !template.enabled) {
-      console.log('Payment cancellation AlimTalk disabled or not configured');
+      console.log('Refund complete AlimTalk disabled or not configured');
       return { success: true };
     }
 
