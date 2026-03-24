@@ -63,7 +63,21 @@ export default function Success() {
              setLoading(false);
              return;
           }
-          
+
+          // Sign in if not already authenticated (new registration flow)
+          if (!auth.currentUser) {
+            const storedData = localStorage.getItem('temp_application_data');
+            if (storedData) {
+              const localUser = JSON.parse(storedData);
+              try {
+                await signInWithEmailAndPassword(auth, localUser.email, localUser.password);
+              } catch (signInError) {
+                console.error('자동 로그인 실패:', signInError);
+              }
+              localStorage.removeItem('temp_application_data');
+            }
+          }
+
           setPaymentData({
             orderId,
             amount: parseInt(amount),

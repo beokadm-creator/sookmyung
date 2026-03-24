@@ -200,7 +200,23 @@ export const confirmPayment = functions.region('asia-northeast3').https.onReques
           });
         });
         
-        // Payment Success Alimtalk removed intentionally per new requirement
+        // Send 신청완료 Alimtalk
+        if (userId) {
+          try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            const userData = userDoc.data();
+            if (userData && userData.phone && userData.name) {
+              const alimtalkService = await getAlimtalkService();
+              await alimtalkService.sendWelcomeMessage(
+                userData.phone,
+                userData.name,
+                orderId
+              );
+            }
+          } catch (alimtalkError) {
+            console.error('Failed to send registration complete Alimtalk:', alimtalkError);
+          }
+        }
 
         res.json({ success: true, paymentData });
       } else {
@@ -331,7 +347,7 @@ export const requestWithdrawal = functions.region('asia-northeast3').https.onCal
       if (userData && userData.phone && userData.name) {
         const paymentsSnapshot = await db.collection('payments')
           .where('user_id', '==', userId)
-          .where('status', '==', 'DONE')
+          .where('status', '==', 'completed')
           .get();
         let totalAmount = 0;
         let orderId = withdrawalRef.id;
