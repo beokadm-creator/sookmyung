@@ -168,7 +168,7 @@ class NHNAlimTalkService {
             password: tempPassword
         });
     }
-    async sendRefundRequest(phone, name, amount, orderId) {
+    async sendRefundRequest(phone, name, amount, date) {
         const template = this.config.templates.payment;
         if (!template || !template.enabled) {
             console.log('Refund request AlimTalk disabled or not configured');
@@ -177,10 +177,10 @@ class NHNAlimTalkService {
         return this.send(template.templateId, phone, {
             name: name,
             amount: amount.toLocaleString(),
-            orderId: orderId
+            date: date
         });
     }
-    async sendRefundComplete(phone, name, amount, reason) {
+    async sendRefundComplete(phone, name, amount) {
         const template = this.config.templates.cancel;
         if (!template || !template.enabled) {
             console.log('Refund complete AlimTalk disabled or not configured');
@@ -188,8 +188,7 @@ class NHNAlimTalkService {
         }
         return this.send(template.templateId, phone, {
             name: name,
-            amount: amount.toLocaleString(),
-            reason: reason
+            amount: amount.toLocaleString()
         });
     }
 }

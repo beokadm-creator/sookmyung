@@ -335,12 +335,16 @@ export const requestWithdrawal = functions.region('asia-northeast3').https.onCal
         });
         
         if (totalAmount > 0) {
+          const now = new Date();
+          const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+          const formattedDate = `${kstDate.getMonth() + 1}월 ${kstDate.getDate()}일`;
+          
           const alimtalkService = await getAlimtalkService();
           await alimtalkService.sendRefundRequest(
             userData.phone,
             userData.name,
             totalAmount,
-            orderId
+            formattedDate
           );
         }
       }
@@ -477,8 +481,7 @@ export const processWithdrawal = functions.region('asia-northeast3').https.onCal
                     await alimtalkService.sendRefundComplete(
                       userData.phone,
                       userData.name,
-                      totalAmount,
-                      `참가 취소 승인 (${withdrawalData?.reason || '사용자 요청'})`
+                      totalAmount
                     );
                   }
                 }
@@ -1140,8 +1143,7 @@ export const cancelPaymentByAdmin = functions.region('asia-northeast3').https.on
             await alimtalkService.sendRefundComplete(
               userData.phone,
               userData.name,
-              paymentData.amount || 0,
-              reason
+              paymentData.amount || 0
             );
           }
         } catch (alimtalkErr) {

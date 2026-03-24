@@ -302,8 +302,11 @@ exports.requestWithdrawal = functions.region('asia-northeast3').https.onCall(asy
                         orderId = doc.data().payment_key;
                 });
                 if (totalAmount > 0) {
+                    const now = new Date();
+                    const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+                    const formattedDate = `${kstDate.getMonth() + 1}월 ${kstDate.getDate()}일`;
                     const alimtalkService = await getAlimtalkService();
-                    await alimtalkService.sendRefundRequest(userData.phone, userData.name, totalAmount, orderId);
+                    await alimtalkService.sendRefundRequest(userData.phone, userData.name, totalAmount, formattedDate);
                 }
             }
         }
@@ -410,7 +413,7 @@ exports.processWithdrawal = functions.region('asia-northeast3').https.onCall(asy
                                     });
                                     if (totalAmount > 0) {
                                         const alimtalkService = await getAlimtalkService();
-                                        await alimtalkService.sendRefundComplete(userData.phone, userData.name, totalAmount, `참가 취소 승인 (${withdrawalData?.reason || '사용자 요청'})`);
+                                        await alimtalkService.sendRefundComplete(userData.phone, userData.name, totalAmount);
                                     }
                                 }
                             }
@@ -949,7 +952,7 @@ exports.cancelPaymentByAdmin = functions.region('asia-northeast3').https.onCall(
                     const userData = userDoc.data();
                     if (userData && userData.phone && userData.name) {
                         const alimtalkService = await getAlimtalkService();
-                        await alimtalkService.sendRefundComplete(userData.phone, userData.name, paymentData.amount || 0, reason);
+                        await alimtalkService.sendRefundComplete(userData.phone, userData.name, paymentData.amount || 0);
                     }
                 }
                 catch (alimtalkErr) {

@@ -229,8 +229,8 @@ export default function AlimtalkSettings({ user }: AlimtalkSettingsProps) {
           {[
             { key: 'verification', label: '인증번호 발송', desc: '회원가입 시 전화번호 인증을 위해 발송됩니다. 변수: #{code}' },
             { key: 'welcome', label: '신청 완료 (접수)', desc: '신청이 접수되었을 때 발송됩니다. (결제 전) 변수: #{name}, #{receiptNumber}' },
-            { key: 'payment', label: '환불접수', desc: '실제 환불 접수(취소 요청) 시 발송됩니다. 변수: #{name}, #{amount}, #{orderId}' },
-            { key: 'cancel', label: '환불완료', desc: '관리자에서 환불을 완료해서 취소가 될때 발송됩니다. 변수: #{name}, #{amount}, #{reason}' },
+            { key: 'payment', label: '환불접수', desc: '실제 환불 접수(취소 요청) 시 발송됩니다. 변수: #{name}, #{date}, #{amount}' },
+            { key: 'cancel', label: '환불완료', desc: '관리자에서 환불을 완료해서 취소가 될때 발송됩니다. 변수: #{name}, #{amount}' },
             { key: 'passwordReset', label: '비밀번호 찾기', desc: '비밀번호 찾기 요청 시 발송됩니다. 변수: #{password}' },
           ].map((template) => (
             <div key={template.key} className="p-4 border rounded-lg bg-gray-50">
