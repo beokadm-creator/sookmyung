@@ -30,4 +30,5 @@ firebase-debug.log*
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?*firebase-adminsdk-*.json
+*.sw?
+*firebase-adminsdk-*.json

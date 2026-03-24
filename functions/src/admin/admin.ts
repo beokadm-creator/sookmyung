@@ -4,7 +4,14 @@ import cors from 'cors';
 import { verifyAdmin, getTossSecretKey } from '../utils/common';
 
 const db = admin.firestore();
-const corsHandler = cors({ origin: true });
+const corsHandler = cors({
+  origin: [
+    'https://smwu120th.or.kr',
+    'https://www.smwu120th.or.kr',
+    'https://sookmyung-97032.web.app',
+    'https://sookmyung-97032.firebaseapp.com',
+  ],
+});
 
 export const createAdmin = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
   if (req.method !== 'POST') {

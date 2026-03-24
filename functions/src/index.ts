@@ -18,7 +18,14 @@ import { createAlimTalkService, AlimTalkConfig } from './alimtalk';
 // Re-export phone auth functions
 export { sendVerificationCode, verifyCode, registerWithPhone, loginWithPhone, requestPasswordReset, fetchUserByPhone };
 
-const corsHandler = cors({ origin: true });
+const corsHandler = cors({
+  origin: [
+    'https://smwu120th.or.kr',
+    'https://www.smwu120th.or.kr',
+    'https://sookmyung-97032.web.app',
+    'https://sookmyung-97032.firebaseapp.com',
+  ],
+});
 
 admin.initializeApp();
 
@@ -45,7 +52,6 @@ export const onUserCreated = functions.region('asia-northeast3').auth.user().onC
   }
 });
 
-// Updated with test Toss secret key: test_sk_oEjb0gm23PbbZpKpZPB4rpGwBJn5
 export const confirmPayment = functions.region('asia-northeast3').https.onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
     if (req.method !== 'POST') {
