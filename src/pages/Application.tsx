@@ -9,6 +9,44 @@ import { X, Phone, Lock, User, CheckCircle, AlertCircle, Calendar, MapPin, Mail,
 import DaumPostcodeEmbed from 'react-daum-postcode';
 import { useRateLimit } from '../hooks/useRateLimit';
 
+function NoticeBox() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border border-amber-300 rounded-lg overflow-hidden text-sm">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors text-left"
+      >
+        <span className="flex items-center gap-2 font-semibold text-amber-800">
+          <span>📢</span>
+          무통장입금 · One Table 신청 안내
+        </span>
+        <span className="text-amber-500 text-xs">{open ? '▲ 닫기' : '▼ 자세히'}</span>
+      </button>
+      {open && (
+        <div className="bg-white px-4 py-3 space-y-3 border-t border-amber-200 text-gray-700">
+          <p>
+            무통장입금 희망자 또는 <strong>One Table(10좌석) 250만원</strong> 신청을 희망하시는 동문은
+            아래 정보를 입력하지 마시고 총동문회 사무국으로 별도 문의해 주세요.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="bg-amber-50 rounded-md px-3 py-2">
+              <p className="text-xs text-gray-500 mb-0.5">총동문회 사무국</p>
+              <p className="font-bold text-gray-800">📞 02-712-1212</p>
+            </div>
+            <div className="bg-amber-50 rounded-md px-3 py-2">
+              <p className="text-xs text-gray-500 mb-0.5">무통장입금 계좌 (국민은행)</p>
+              <p className="font-bold text-gray-800">763601-04-178355</p>
+              <p className="text-xs text-gray-500">예금주: 숙명여자대학교 총동문회</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Application() {
   const [formData, setFormData] = useState<RegisterFormData>({
     phone: '',
@@ -369,6 +407,10 @@ export default function Application() {
             </div>
 
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="p-4 sm:p-8 space-y-10">
+
+                {/* Notice */}
+                <NoticeBox />
+
                 {/* 1. Phone Verification & Password */}
               <section className="space-y-6">
                 <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center">
