@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:all": "firebase deploy --only functions,firestore,hosting",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "init-db": "node scripts/init-db.cjs"
+  }
+}

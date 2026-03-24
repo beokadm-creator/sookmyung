@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Initialize Data - Sookmyung 120th</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        h1 {
+            color: #1e40af;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        button {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1e3a8a;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Firestore 초기 데이터 도구</h1>
+
+        <div class="warning">
+            <strong>⚠️ 주의:</strong> 이 도구는 다음 작업을 수행합니다:
+            <ul>
+                <li>Timeline 컬렉션 초기 데이터 생성 (10개 항목)</li>
+                <li>Gallery 컬렉션 초기 데이터 생성 (9개 항목)</li>
+                <li>Events 컬렉션 초기 데이터 생성 (6개 항목)</li>
+                <li>Site Config 초기 설정 생성</li>
+            </ul>
+            <strong>이미 데이터가 있는 경우 아무 일도 일어나지 않습니다.</strong>
+        </div>
+
+        <button id="loginBtn" onclick="login()">🔑 관리자 로그인 (Google)</button>
+        <button id="initBtn" onclick="initializeData()" disabled>📀 초기 데이터 생성</button>
+
+        <div id="result" class="result"></div>
+
+        <div class="info">
+            <strong>📋 상태:</strong>
+            <ul id="statusList">
+                <li>🔴 로그인 필요</li>
+                <li>⏳ Firestore 인덱스: 생성 대기 중</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6mO4P8lTz5r3bY7nK9qJ2mX5vZ8cB1dF",
+            authDomain: "sookmyung-97032.firebaseapp.com",
+            projectId: "sookmyung-97032",
+            storageBucket: "sookmyung-97032.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const functions = getFunctions(app, 'us-central1');
+        const provider = new GoogleAuthProvider();
+
+        let currentUser = null;
+
+        window.login = async function() {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                showResult('success', '✅ 로그인 성공! 이제 초기 데이터를 생성할 수 있습니다.');
+                updateStatus('로그인 완료', 'green');
+            } catch (error) {
+                showResult('error', '❌ 로그인 실패: ' + error.message);
+                console.error(error);
+            }
+        };
+
+        window.initializeData = async function() {
+            const btn = document.getElementById('initBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 생성 중...';
+
+            try {
+                const initializeDataFn = httpsCallable(functions, 'initializeData');
+                const result = await initializeDataFn();
+
+                if (result.data.success) {
+                    showResult('success', '✅ ' + result.data.message);
+                    updateStatus('초기 데이터 생성 완료', 'green');
+                    updateStatus('Firestore 인덱스: 활성화됨', 'green');
+                } else {
+                    showResult('error', '❌ 초기 데이터 생성 실패');
+                }
+            } catch (error) {
+                showResult('error', '❌ 오류 발생: ' + error.message);
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📀 초기 데이터 생성';
+            }
+        };
+
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result ' + type;
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+        }
+
+        function updateStatus(text, color) {
+            const statusList = document.getElementById('statusList');
+            const colorCode = color === 'green' ? 'green' : 'red';
+            const icon = color === 'green' ? '✅' : '🔴';
+            statusList.innerHTML += `<li style="color: ${colorCode}">${icon} ${text}</li>`;
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const initBtn = document.getElementById('initBtn');
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (user) {
+                initBtn.disabled = false;
+                loginBtn.textContent = '✅ 로그인됨: ' + user.email;
+                loginBtn.disabled = true;
+                updateStatus('로그인 완료', 'green');
+            }
+        });
+    </script>
+</body>
+</html>
