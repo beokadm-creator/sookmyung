@@ -389,9 +389,7 @@ export default function Admin() {
     if (!window.confirm('정말로 이 공지사항을 삭제하시겠습니까?')) return;
 
     try {
-      await updateDoc(doc(db, 'notices', noticeId), {
-        deleted_at: serverTimestamp(),
-      });
+      await deleteDoc(doc(db, 'notices', noticeId));
       alert('공지사항이 삭제되었습니다.');
       fetchAdminData();
     } catch (error) {
