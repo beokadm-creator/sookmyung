@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp, setDoc } from 'firebase/firestore';
 import Layout from '../components/Layout';
 import { User } from '../types';
@@ -69,10 +69,12 @@ export default function Success() {
             const storedData = localStorage.getItem('temp_application_data');
             if (storedData) {
               const localUser = JSON.parse(storedData);
-              try {
-                await signInWithEmailAndPassword(auth, localUser.email, localUser.password);
-              } catch (signInError) {
-                console.error('자동 로그인 실패:', signInError);
+              if (localUser.token) {
+                try {
+                  await signInWithCustomToken(auth, localUser.token);
+                } catch (signInError) {
+                  console.error('자동 로그인 실패:', signInError);
+                }
               }
               localStorage.removeItem('temp_application_data');
             }

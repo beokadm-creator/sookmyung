@@ -309,7 +309,7 @@ export default function Application() {
         position: formData.position,
       });
 
-      const { success, userId, message } = registerResult.data as any;
+      const { success, userId, token, message } = registerResult.data as any;
 
       if (!success) {
         throw new Error(message || '신청에 실패했습니다.');
@@ -318,6 +318,7 @@ export default function Application() {
       // Save to localStorage and navigate to checkout
       localStorage.setItem('temp_application_data', JSON.stringify({
         userId,
+        token,
         name: formData.name,
         email: formData.email,
         phone: normalizedPhone,

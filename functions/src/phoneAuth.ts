@@ -437,9 +437,17 @@ export const registerWithPhone = functions.region('asia-northeast3').https.onCal
     const alimtalkService = await getService();
     await alimtalkService.sendWelcomeMessage(phone, name, userId);
 
+    let customToken = null;
+    try {
+      customToken = await admin.auth().createCustomToken(userId);
+    } catch (tokenError) {
+      console.error('Failed to create custom token:', tokenError);
+    }
+
     return {
       success: true,
       userId: userId,
+      token: customToken,
       message: '참가 신청이 완료되었습니다.',
     };
   } catch (error: any) {
@@ -677,7 +685,7 @@ export const fetchUserByPhone = functions.region('asia-northeast3').https.onCall
         position: userData.position,
         message: userData.message,
         paymentStatus: userData.paymentStatus,
-        created_at: userData.created_at,
+        created_at: userData.created_at ? userData.created_at.toDate().toISOString() : null,
       }
     };
   } catch (error: any) {
