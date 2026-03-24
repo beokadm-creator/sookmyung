@@ -434,9 +434,6 @@ export const registerWithPhone = functions.region('asia-northeast3').https.onCal
       throw new functions.https.HttpsError('internal', `사용자 인증 정보 생성에 실패했습니다: ${authError.message}`);
     }
 
-    const alimtalkService = await getService();
-    await alimtalkService.sendWelcomeMessage(phone, name, userId);
-
     let customToken = null;
     try {
       customToken = await admin.auth().createCustomToken(userId);

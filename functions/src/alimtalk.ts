@@ -168,7 +168,7 @@ export class NHNAlimTalkService {
     });
   }
 
-  async sendWelcomeMessage(phone: string, name: string, receiptNumber: string): Promise<AlimTalkResult> {
+  async sendWelcomeMessage(phone: string, name: string, amount: number, orderId: string): Promise<AlimTalkResult> {
     const template = this.config.templates.welcome;
     if (!template || !template.enabled) {
       console.log('Welcome AlimTalk disabled or not configured');
@@ -177,7 +177,8 @@ export class NHNAlimTalkService {
 
     return this.send(template.templateId, phone, {
       name: name,
-      receiptNumber: receiptNumber
+      amount: amount.toLocaleString(),
+      orderId: orderId
     });
   }
 

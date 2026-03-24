@@ -771,8 +771,7 @@ export default function Application() {
                       />
                       <div className="ml-3">
                         <span className="text-lg font-bold text-gray-900">Ⅱ. 캠퍼스 투어</span>
-                        <p className="text-sm text-gray-500 mt-1">2026.5.21(목) / 오후(시간 추후 공지)</p>
-                        <p className="text-xs text-green-600 font-bold mt-1">프로그램: 캠퍼스 투어(무료)</p>
+                        <p className="text-sm text-gray-500 mt-1">2026.5.21(목) / 오후 (*참가비 무료, 자세한 사항은 추후 공지)</p>
                       </div>
                     </label>
                   </div>

@@ -210,6 +210,7 @@ export const confirmPayment = functions.region('asia-northeast3').https.onReques
               await alimtalkService.sendWelcomeMessage(
                 userData.phone,
                 userData.name,
+                requestedAmount,
                 orderId
               );
             }
