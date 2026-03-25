@@ -448,11 +448,19 @@ export const registerWithPhone = functions.region('asia-northeast3').https.onCal
       message: '참가 신청이 완료되었습니다.',
     };
   } catch (error: any) {
-    console.error('Register with phone error:', error);
+    console.error('Register with phone detailed error:', error);
+    
+    // Provide more context in HttpsError
     if (error instanceof functions.https.HttpsError) {
       throw error;
     }
-    throw new functions.https.HttpsError('internal', '참가 신청 중 오류가 발생했습니다.');
+    
+    // Check for specific auth/firestore errors to be more helpful
+    let message = '참가 신청 중 시스템 오류가 발생했습니다.';
+    if (error.code === 'auth/invalid-phone-number') message = '유효하지 않은 전화번호 형식입니다.';
+    if (error.code === 'auth/phone-number-already-exists') message = '이미 등록된 전화번호입니다.';
+    
+    throw new functions.https.HttpsError('internal', `${message} (${error.message || String(error)})`);
   }
 });
 

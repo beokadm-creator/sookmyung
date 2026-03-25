@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../firebase';
+import { auth, db, functions } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { signInWithCustomToken } from 'firebase/auth';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
 import Layout from '../components/Layout';
 import { SiteConfig } from '../types';
+import { CheckCircle } from 'lucide-react';
 
 export default function Checkout() {
   const [loading, setLoading] = useState(true);
@@ -12,7 +15,10 @@ export default function Checkout() {
   const [clientKey, setClientKey] = useState('');
   const [amount, setAmount] = useState(0);
   const [priceLabel, setPriceLabel] = useState('');
-  const [selectedMethod, setSelectedMethod] = useState<'card' | 'transfer'>('card');
+  const [selectedMethod, setSelectedMethod] = useState<'card' | 'transfer' | 'manual_vbank'>('card');
+  const [showVbankModal, setShowVbankModal] = useState(false);
+  const [showVbankSuccess, setShowVbankSuccess] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -30,6 +36,16 @@ export default function Checkout() {
           setPhone(data.phone || '');
           setAmount(data.amount || 0);
           setPriceLabel(data.priceLabel || '');
+
+          // Sign in if token is available but user is not authenticated
+          if (!auth.currentUser && data.token) {
+            try {
+              await signInWithCustomToken(auth, data.token);
+              console.log('User signed in with custom token for checkout');
+            } catch (authError) {
+              console.error('Failed to sign in for checkout:', authError);
+            }
+          }
         } 
         // 2. If no temp data, check if user is already logged in (from MyPage.tsx flow)
         else {
@@ -100,7 +116,12 @@ export default function Checkout() {
     return () => unsubscribe();
   }, [navigate]);
 
-  const handlePayment = async (method: 'card' | 'transfer') => {
+  const handlePayment = async (method: 'card' | 'transfer' | 'manual_vbank') => {
+    if (method === 'manual_vbank') {
+      setShowVbankModal(true);
+      return;
+    }
+
     try {
       const tossPayments = await loadTossPayments(clientKey);
 
@@ -135,6 +156,32 @@ export default function Checkout() {
     } catch (err: any) {
       console.error('Payment error:', err);
       setError(err.message || '결제 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  const confirmManualVbank = async () => {
+    setProcessing(true);
+    try {
+      const date = new Date();
+      const dateStr = date.getFullYear().toString() +
+        (date.getMonth() + 1).toString().padStart(2, '0') +
+        date.getDate().toString().padStart(2, '0');
+      const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const orderId = `VBK${dateStr}${randomStr}`;
+
+      const applyVbank = httpsCallable(functions, 'applyVbank');
+      await applyVbank({ amount, orderId });
+
+      localStorage.removeItem('temp_application_data');
+      setShowVbankModal(false);
+      setShowVbankSuccess(true);
+    } catch (err: any) {
+      console.error('Manual vbank error:', err);
+      // Show more detailed error if possible
+      const errorMessage = err.message || '무통장입금 신청 중 오류가 발생했습니다.';
+      alert(`신청 실패: ${errorMessage}\n정보가 정확한지 확인 후 다시 시도해주세요.`);
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -250,17 +297,144 @@ export default function Checkout() {
                 />
               </div>
             </div>
+
+            {/* Manual Bank Transfer */}
+            <div
+              onClick={() => setSelectedMethod('manual_vbank')}
+              className={`flex items-center justify-between p-6 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedMethod === 'manual_vbank'
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-gray-200 hover:border-blue-400'
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">💰</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">무통장입금</h3>
+                  <p className="text-sm text-gray-600">직접 계좌로 입금</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={selectedMethod === 'manual_vbank'}
+                  onChange={() => setSelectedMethod('manual_vbank')}
+                  className="w-5 h-5 text-blue-600"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Pay Button */}
         <button
           onClick={() => handlePayment(selectedMethod)}
-          disabled={!selectedMethod}
+          disabled={!selectedMethod || processing}
           className="w-full bg-blue-900 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-800 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          {selectedMethod === 'card' ? '카드 결제하기' : '계좌이체하기'} ({amount.toLocaleString()}원)
+          {processing ? '처리 중...' : (selectedMethod === 'manual_vbank' ? '무통장입금 신청하기' : (selectedMethod === 'card' ? '카드 결제하기' : '계좌이체하기'))} ({amount.toLocaleString()}원)
         </button>
+
+        {/* Manual Vbank Modal */}
+        {showVbankModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">🏦</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">무통장입금 안내</h3>
+              </div>
+              
+              <div className="space-y-4 mb-8">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-900 font-bold mb-2">전야제 신청이 접수되었습니다.</p>
+                  <p className="text-sm text-blue-800 leading-relaxed">
+                    아래 계좌로 금액 입금 시 확인 후 최종 승인처리됩니다.
+                    <br /><br />
+                    <strong>은행:</strong> 국민은행<br />
+                    <strong>계좌번호:</strong> 763601-04-178355<br />
+                    <strong>예금주:</strong> 숙명여자대학교 총동문회<br />
+                    <strong>입금액:</strong> {amount.toLocaleString()}원
+                  </p>
+                </div>
+                <p className="text-sm text-gray-600">
+                  ※ 입금 확인 후 최종 승인이 완료되면 알림톡이 발송됩니다.<br />
+                  ※ 신청 정보와 입금 현황은 마이페이지에서 확인 가능합니다.<br />
+                  ※ 문의전화: 02-712-1212
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowVbankModal(false)}
+                  className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-bold"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={confirmManualVbank}
+                  disabled={processing}
+                  className="flex-1 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-bold disabled:bg-gray-400"
+                >
+                  {processing ? '신청 중...' : '확인(신청 완료)'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Manual Vbank Success Modal */}
+        {showVbankSuccess && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all animate-in fade-in zoom-in duration-300">
+              <div className="text-center mb-6">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-green-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 italic">신청이 완료되었습니다!</h3>
+                <p className="text-gray-600 mt-2">무통장입금 확인 후 최종 승인됩니다.</p>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8 text-left">
+                <p className="text-blue-900 font-bold text-lg mb-4 border-b border-blue-200 pb-2">입금 안내</p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">입금 은행</span>
+                    <span className="font-bold text-blue-900">국민은행</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">계좌번호</span>
+                    <span className="font-bold text-blue-900">763601-04-178355</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">예금주</span>
+                    <span className="font-bold text-blue-900">숙명여자대학교 총동문회</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-blue-200">
+                    <span className="text-blue-700 font-bold">입금액</span>
+                    <span className="text-xl font-black text-blue-600">{amount.toLocaleString()}원</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg leading-relaxed">
+                  <div className="mt-0.5">•</div>
+                  <div>입금 확인 후 알림톡이 발송되며, 이후 마이페이지에서 '참가 확정' 상태를 확인하실 수 있습니다.</div>
+                </div>
+                <button
+                  onClick={() => navigate('/mypage')}
+                  className="w-full py-4 bg-blue-900 text-white rounded-xl hover:bg-blue-800 font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+                >
+                  확인 (마이페이지로 이동)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="text-center space-y-2 mt-4">
           <p className="text-red-500 text-sm font-medium">※ 하나카드는 결제가 불가합니다.</p>

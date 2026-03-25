@@ -6,7 +6,7 @@ import { doc, getDoc, collection, query, getDocs, updateDoc, setDoc, serverTimes
 import { httpsCallable } from 'firebase/functions';
 import Layout from '../components/Layout';
 import { User, Payment, Config, Notice, WithdrawalRequest, SiteConfig, PriceTier, Message } from '../types';
-import { CheckCircle, XCircle, Plus, Edit2, Trash2, Calendar, Download, Eye } from 'lucide-react';
+import { CheckCircle, XCircle, Plus, Edit2, Trash2, Calendar, Download, Eye, RefreshCw, Send } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 import AlimtalkSettings from '../components/admin/AlimtalkSettings';
@@ -644,21 +644,87 @@ export default function Admin() {
                             className={`px-2 py-1 rounded text-xs font-bold ${
                               u.paymentStatus
                                 ? 'bg-green-100 text-green-700'
-                                : 'bg-yellow-100 text-yellow-700'
+                                : (u as any).vbankStatus === 'pending'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-yellow-100 text-yellow-700'
                             }`}
                           >
-                            {u.paymentStatus ? '완료' : '미결'}
+                            {u.paymentStatus ? '결제완료' : ((u as any).vbankStatus === 'pending' ? '입금대기' : '미결')}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-sm text-gray-500">{formatDate(u.created_at)}</td>
                         <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => openUserModal(u)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            title="상세보기"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            {((u as any).vbankStatus === 'pending' || !u.paymentStatus) && (
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm(`${u.name}님의 상태를 '결제완료'로 변경하시겠습니까?\n변경 시 참가 완료 알림톡이 자동으로 발송됩니다.`)) {
+                                    try {
+                                      const updateUserStatus = httpsCallable(functions, 'updateUserStatus');
+                                      await updateUserStatus({ userId: u.id, paymentStatus: true, vbankStatus: 'approved' });
+                                      alert('변경되었습니다.');
+                                      fetchAdminData();
+                                    } catch (err: any) {
+                                      alert('변경 중 오류 발생: ' + err.message);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                title="결제완료로 변경"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {/* Manual AlimTalk Button */}
+                            <button
+                              onClick={async () => {
+                                const type = window.confirm('확정(Welcome) 알림톡을 보내시겠습니까? (취소 누르면 입금대기 알림톡 안내)') ? 'welcome' : 'pending';
+                                if (window.confirm(`${u.name}님께 ${type === 'welcome' ? '참가확정' : '입금대기'} 알림톡을 수동으로 발송하시겠습니까?`)) {
+                                  try {
+                                    const sendManualAlimtalk = httpsCallable(functions, 'sendManualAlimtalk');
+                                    const result = await sendManualAlimtalk({ userId: u.id, templateType: type });
+                                    alert((result.data as any).message);
+                                  } catch (err: any) {
+                                    alert('발송 중 오류 발생: ' + err.message);
+                                  }
+                                }
+                              }}
+                              className="p-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                              title="알림톡 수동 발송"
+                            >
+                              <Send className="w-4 h-4" />
+                            </button>
+
+                            {/* Set to Pending manually if '미결' */}
+                            {!u.paymentStatus && (u as any).vbankStatus !== 'pending' && (
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm(`${u.name}님의 상태를 '입금대기'로 변경하시겠습니까?\n변경 시 입금 안내 알림톡이 자동으로 발송됩니다.`)) {
+                                    try {
+                                      const updateUserStatus = httpsCallable(functions, 'updateUserStatus');
+                                      await updateUserStatus({ userId: u.id, vbankStatus: 'pending' });
+                                      alert('변경되었습니다.');
+                                      fetchAdminData();
+                                    } catch (err: any) {
+                                      alert('변경 중 오류 발생: ' + err.message);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="입금대기로 변경"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => openUserModal(u)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="상세보기"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

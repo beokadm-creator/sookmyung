@@ -9,6 +9,8 @@ export interface User {
   password?: string; // 6-digit numeric password (hashed)
   role: 'user' | 'admin';
   paymentStatus: boolean;
+  paymentMethod?: 'card' | 'transfer' | 'manual_vbank' | 'vbank';
+  vbankStatus?: 'pending' | 'approved' | 'rejected' | null;
   created_at: Timestamp;
   updated_at: Timestamp;
   birthdate?: string;
@@ -279,6 +281,7 @@ export interface AlimtalkConfig {
     event: AlimtalkTemplateConfig;
     payment: AlimtalkTemplateConfig;
     passwordReset: AlimtalkTemplateConfig;
+    vbankPending: AlimtalkTemplateConfig;
     [key: string]: AlimtalkTemplateConfig;
   };
   updatedAt: Timestamp | FieldValue;

@@ -236,6 +236,19 @@ export class NHNAlimTalkService {
       amount: amount.toLocaleString()
     });
   }
+
+  async sendVbankPending(phone: string, name: string, amount: number): Promise<AlimTalkResult> {
+    const template = this.config.templates.vbankPending;
+    if (!template || !template.enabled) {
+      console.log('Vbank pending AlimTalk disabled or not configured');
+      return { success: true };
+    }
+
+    return this.send(template.templateId, phone, {
+      name: name,
+      amount: amount.toLocaleString()
+    });
+  }
 }
 
 export function createAlimTalkService(config: AlimTalkConfig): NHNAlimTalkService {

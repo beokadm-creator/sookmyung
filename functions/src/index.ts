@@ -33,9 +33,26 @@ const db = admin.firestore();
 
 // Alimtalk Service helper
 async function getAlimtalkService() {
-  const configDoc = await db.collection('config').doc('alimtalk').get();
-  const config = configDoc.data() as AlimTalkConfig || { appKey: '', secretKey: '', senderKey: '', templates: {} };
-  return createAlimTalkService(config);
+  try {
+    const configDoc = await db.collection('config').doc('alimtalk').get();
+    const config = configDoc.data() as AlimTalkConfig || { appKey: '', secretKey: '', senderKey: '', templates: {} };
+    
+    // Ensure templates object exists even if it's missing in DB
+    if (!config.templates) {
+      config.templates = {} as any;
+    }
+    
+    return createAlimTalkService(config);
+  } catch (error) {
+    console.warn('Failed to load AlimTalk config:', error);
+    // Return a dummy service that won't throw during send calls
+    return createAlimTalkService({ 
+      appKey: '', 
+      secretKey: '', 
+      senderKey: '', 
+      templates: {} as any 
+    });
+  }
 }
 
 export const onUserCreated = functions.region('asia-northeast3').auth.user().onCreate(async (user) => {
@@ -1058,12 +1075,9 @@ export const getAlimtalkTemplates = functions.region('asia-northeast3').https.on
     return { templates };
   } catch (error: any) {
     console.error('Get Alimtalk templates error:', error);
-    
-    // Pass through error messages
     if (error.message) {
        throw new functions.https.HttpsError('internal', error.message);
     }
-    
     throw new functions.https.HttpsError('internal', '템플릿 목록을 불러오는 중 오류가 발생했습니다.');
   }
 });
@@ -1150,7 +1164,7 @@ export const cancelPaymentByAdmin = functions.region('asia-northeast3').https.on
         cancelled_by: context.auth.uid,
       });
 
-      if (paymentData.user_id && paymentData.user_id !== 'anonymous') {
+      if (paymentData?.user_id && paymentData?.user_id !== 'anonymous') {
         const userRef = db.collection('users').doc(paymentData.user_id);
         await userRef.update({
           paymentStatus: false,
@@ -1185,5 +1199,292 @@ export const cancelPaymentByAdmin = functions.region('asia-northeast3').https.on
       throw error;
     }
     throw new functions.https.HttpsError('internal', '결제 취소 처리 중 오류가 발생했습니다.');
+  }
+});
+
+// ==================== MANUAL BANK TRANSFER ====================
+
+export const applyVbank = functions.region('asia-northeast3').https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+
+  const userId = context.auth.uid;
+  const { amount, orderId } = data;
+
+  console.log(`Apply Vbank request: userId=${userId}, amount=${amount}, orderId=${orderId}`);
+
+  try {
+    if (!userId || !amount || !orderId) {
+      console.error('Missing required parameters for applyVbank:', { userId, amount, orderId });
+      throw new functions.https.HttpsError('invalid-argument', '필수 파라미터(사용자 ID, 금액, 주문번호)가 누락되었습니다.');
+    }
+
+    // 1. Update user info
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+    
+    if (!userDoc.exists) {
+      console.error(`User document not found for applyVbank: ${userId}`);
+      throw new functions.https.HttpsError('not-found', '사용자 정보를 찾을 수 없습니다.');
+    }
+
+    await userRef.set({
+      paymentMethod: 'vbank',
+      vbankStatus: 'pending',
+      updated_at: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    // 2. Create payment record
+    const paymentRef = db.collection('payments').doc();
+    await paymentRef.set({
+      user_id: userId,
+      order_id: orderId,
+      amount: Number(amount),
+      status: 'pending',
+      payment_type: 'event',
+      method: 'vbank',
+      created_at: admin.firestore.FieldValue.serverTimestamp(),
+      updated_at: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`Vbank application record created for user ${userId}`);
+
+    // 3. Send Vbank Pending Alimtalk
+    try {
+      const userData = userDoc.data();
+      if (userData && userData.phone && userData.name) {
+        const alimtalkService = await getAlimtalkService();
+        console.log(`Sending vbank pending notification to ${userData.phone}`);
+        const alimResult = await alimtalkService.sendVbankPending(
+          userData.phone,
+          userData.name,
+          Number(amount)
+        );
+        if (!alimResult.success) {
+          console.warn('AlimTalk delivery reported failure:', alimResult.error);
+        }
+      } else {
+        console.warn(`User data missing phone/name for AlimTalk: ${JSON.stringify(userData)}`);
+      }
+    } catch (alimtalkError: any) {
+      console.error('Failed to send vbank pending AlimTalk:', alimtalkError);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Apply vbank unexpected error:', error);
+    if (error instanceof functions.https.HttpsError) throw error;
+    throw new functions.https.HttpsError('internal', `무통장입금 처리 중 오류가 발생했습니다: ${error.message || String(error)}`);
+  }
+});
+
+export const approveVbank = functions.region('asia-northeast3').https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+
+  const { userId } = data;
+  if (!userId) {
+    throw new functions.https.HttpsError('invalid-argument', '사용자 ID가 필요합니다.');
+  }
+
+  console.log(`Approving Vbank for user: ${userId}`);
+
+  try {
+    const adminUserDoc = await db.collection('users').doc(context.auth.uid).get();
+    const adminData = adminUserDoc.data();
+    const isAdmin = adminData?.role === 'admin' || adminData?.email === 'aaron@beoksolution.com';
+
+    if (!isAdmin) {
+      throw new functions.https.HttpsError('permission-denied', '관리자 권한이 필요합니다.');
+    }
+
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+    const userData = userDoc.data();
+
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError('not-found', '사용자를 찾을 수 없습니다.');
+    }
+
+    await db.runTransaction(async (transaction) => {
+      transaction.update(userRef, {
+        paymentStatus: true,
+        vbankStatus: 'approved',
+        updated_at: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      const paymentsSnapshot = await db.collection('payments')
+        .where('user_id', '==', userId)
+        .where('method', '==', 'vbank')
+        .where('status', '==', 'pending')
+        .get();
+
+      paymentsSnapshot.docs.forEach(doc => {
+        transaction.update(doc.ref, {
+          status: 'completed',
+          updated_at: admin.firestore.FieldValue.serverTimestamp(),
+          approved_at: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+    });
+
+    console.log(`Vbank approval completed for user: ${userId}`);
+
+    // Send Welcome Alimtalk
+    if (userData?.phone && userData?.name) {
+      try {
+        const paymentsSnapshot = await db.collection('payments')
+          .where('user_id', '==', userId)
+          .where('method', '==', 'vbank')
+          .orderBy('created_at', 'desc')
+          .limit(1)
+          .get();
+        
+        const lastPayment = paymentsSnapshot.docs[0]?.data();
+        const amount = lastPayment?.amount || 0;
+        const orderId = lastPayment?.order_id || 'manual';
+
+        const alimtalkService = await getAlimtalkService();
+        console.log(`Sending welcome notification to ${userData.phone}`);
+        await alimtalkService.sendWelcomeMessage(
+          userData.phone,
+          userData.name,
+          amount,
+          orderId
+        );
+      } catch (alimError) {
+        console.error('Failed to send AlimTalk after vbank approval:', alimError);
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Approve vbank error:', error);
+    if (error instanceof functions.https.HttpsError) throw error;
+    throw new functions.https.HttpsError('internal', `승인 처리 중 오류가 발생했습니다: ${error.message || String(error)}`);
+  }
+});
+
+export const sendManualAlimtalk = functions.region('asia-northeast3').https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+
+  const { userId, templateType } = data; // templateType: 'welcome' | 'pending' | 'refund'
+  if (!userId || !templateType) {
+    throw new functions.https.HttpsError('invalid-argument', '필수 파라미터가 누락되었습니다.');
+  }
+
+  try {
+    const adminUserDoc = await db.collection('users').doc(context.auth.uid).get();
+    const isAdmin = adminUserDoc.data()?.role === 'admin' || adminUserDoc.data()?.email === 'aaron@beoksolution.com';
+    if (!isAdmin) throw new functions.https.HttpsError('permission-denied', '관리자 권한이 필요합니다.');
+
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    if (!userData || !userData.phone || !userData.name) {
+      throw new functions.https.HttpsError('not-found', '사용자 정보(전화번호/성명)가 부족합니다.');
+    }
+
+    const alimtalkService = await getAlimtalkService();
+    let result;
+
+    if (templateType === 'welcome') {
+      const paymentsSnapshot = await db.collection('payments')
+        .where('user_id', '==', userId)
+        .orderBy('created_at', 'desc')
+        .limit(1)
+        .get();
+      const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
+      const orderId = paymentsSnapshot.docs[0]?.data()?.order_id || 'manual';
+      result = await alimtalkService.sendWelcomeMessage(userData.phone, userData.name, amount, orderId);
+    } else if (templateType === 'pending') {
+      const paymentsSnapshot = await db.collection('payments')
+        .where('user_id', '==', userId)
+        .orderBy('created_at', 'desc')
+        .limit(1)
+        .get();
+      const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
+      result = await alimtalkService.sendVbankPending(userData.phone, userData.name, amount);
+    } else {
+      throw new functions.https.HttpsError('invalid-argument', '지원하지 않는 템플릿입니다.');
+    }
+
+    return { success: result.success, message: result.success ? '알림톡이 발송되었습니다.' : `발송 실패: ${result.error}` };
+  } catch (error: any) {
+    console.error('Send manual AlimTalk error:', error);
+    if (error instanceof functions.https.HttpsError) throw error;
+    throw new functions.https.HttpsError('internal', `알림톡 발송 중 오류: ${error.message}`);
+  }
+});
+
+export const updateUserStatus = functions.region('asia-northeast3').https.onCall(async (data: any, context: any) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+
+  const { userId, paymentStatus, vbankStatus } = data;
+  if (!userId) throw new functions.https.HttpsError('invalid-argument', '사용자 ID가 필요합니다.');
+
+  try {
+    const adminUserDoc = await db.collection('users').doc(context.auth.uid).get();
+    const isAdmin = adminUserDoc.data()?.role === 'admin' || adminUserDoc.data()?.email === 'aaron@beoksolution.com';
+    if (!isAdmin) throw new functions.https.HttpsError('permission-denied', '관리자 권한이 필요합니다.');
+
+    const updateData: any = { updated_at: admin.firestore.FieldValue.serverTimestamp() };
+    if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
+    if (vbankStatus !== undefined) updateData.vbankStatus = vbankStatus;
+
+    await db.collection('users').doc(userId).update(updateData);
+    
+    // Auto-send Alimtalk if changing to completed/pending?
+    // According to user request: "상태를 값을 변경함에 따라 진행해야 합니다... 결제 상태를 변경하면 알림톡이 발송되게 하면 됩니다."
+    if (paymentStatus === true || vbankStatus === 'approved') {
+       // Trigger AlimTalk send logic via internal call or separate trigger
+       // For simplicity, we can call the service here if we have info
+       try {
+         const userDoc = await db.collection('users').doc(userId).get();
+         const userData = userDoc.data();
+         if (userData?.phone && userData?.name) {
+            const alimtalkService = await getAlimtalkService();
+            // Get amount from last payment
+            const paymentsSnapshot = await db.collection('payments')
+              .where('user_id', '==', userId)
+              .orderBy('created_at', 'desc')
+              .limit(1)
+              .get();
+            const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
+            const orderId = paymentsSnapshot.docs[0]?.data()?.order_id || 'manual';
+            await alimtalkService.sendWelcomeMessage(userData.phone, userData.name, amount, orderId);
+         }
+       } catch (e) {
+         console.warn('Silent failure sending auto-alimtalk during status update:', e);
+       }
+    } else if (vbankStatus === 'pending') {
+      try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        if (userData?.phone && userData?.name) {
+           const alimtalkService = await getAlimtalkService();
+           const paymentsSnapshot = await db.collection('payments')
+             .where('user_id', '==', userId)
+             .orderBy('created_at', 'desc')
+             .limit(1)
+             .get();
+           const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
+           await alimtalkService.sendVbankPending(userData.phone, userData.name, amount);
+        }
+      } catch (e) {
+        console.warn('Silent failure sending auto-alimtalk during status update:', e);
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Update user status error:', error);
+    if (error instanceof functions.https.HttpsError) throw error;
+    throw new functions.https.HttpsError('internal', `상태 변경 중 오류: ${error.message}`);
   }
 });

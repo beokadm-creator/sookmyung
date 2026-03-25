@@ -206,7 +206,7 @@ export default function MyPage() {
                       : 'bg-yellow-100 text-yellow-700'
                     }`}>
                     <CreditCard className="w-4 h-4" />
-                    {user.paymentStatus ? '참가 완료' : '미결제'}
+                    {user.paymentStatus ? '참가 완료' : (user && (user as any).vbankStatus === 'pending' ? '승인 대기중' : '미결제')}
                   </div>
                 </div>
 
@@ -248,6 +248,25 @@ export default function MyPage() {
                     <Settings className="w-4 h-4 mr-2" />
                     관리자 페이지
                   </Button>
+                )}
+
+                {user && (user as any).vbankStatus === 'pending' && (
+                  <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <CreditCard className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-medium text-blue-900">입금 확인 대기 중</p>
+                        <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                          아래 계좌로 입금해 주시면 확인 후 승인됩니다.<br />
+                          <strong>국민은행 763601-04-178355</strong><br />
+                          예금주: 숙명여자대학교 총동문회
+                        </p>
+                        <p className="text-xs text-blue-600 mt-2">
+                          문의전화: 02-712-1212
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {withdrawalRequest && withdrawalRequest.status === 'pending' && (
