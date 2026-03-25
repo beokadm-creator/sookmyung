@@ -324,23 +324,30 @@ exports.requestWithdrawal = functions.region('asia-northeast3').https.onCall(asy
         });
         try {
             if (userData && userData.phone && userData.name) {
+                console.log(`Checking payments for withdrawal alimtalk: ${userId}`);
                 const paymentsSnapshot = await db.collection('payments')
                     .where('user_id', '==', userId)
-                    .where('status', '==', 'completed')
                     .get();
                 let totalAmount = 0;
-                let orderId = withdrawalRef.id;
+                let hasActivePayment = false;
                 paymentsSnapshot.docs.forEach((doc) => {
-                    totalAmount += doc.data().amount || 0;
-                    if (doc.data().payment_key)
-                        orderId = doc.data().payment_key;
+                    const p = doc.data();
+                    if (p.status === 'completed' || p.status === 'pending') {
+                        totalAmount += p.amount || 0;
+                        hasActivePayment = true;
+                    }
                 });
-                if (totalAmount > 0) {
+                console.log(`Withdrawal alimtalk info: totalAmount=${totalAmount}, hasActivePayment=${hasActivePayment}`);
+                if (hasActivePayment) {
                     const now = new Date();
                     const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000));
                     const formattedDate = `${kstDate.getMonth() + 1}월 ${kstDate.getDate()}일`;
                     const alimtalkService = await getAlimtalkService();
-                    await alimtalkService.sendRefundRequest(userData.phone, userData.name, totalAmount, formattedDate);
+                    const alimResult = await alimtalkService.sendRefundRequest(userData.phone, userData.name, totalAmount, formattedDate);
+                    console.log(`Refund request AlimTalk result for ${userData.phone}:`, alimResult);
+                }
+                else {
+                    console.log(`No active payments found for user ${userId}, skipping notification.`);
                 }
             }
         }
@@ -400,66 +407,66 @@ exports.processWithdrawal = functions.region('asia-northeast3').https.onCall(asy
                 throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 설정되지 않았습니다.');
             }
             try {
+                console.log(`Processing withdrawal for user: ${withdrawalData?.user_id}`);
                 const paymentsSnapshot = await db.collection('payments')
                     .where('user_id', '==', withdrawalData?.user_id)
-                    .where('status', '==', 'completed')
                     .get();
-                if (!paymentsSnapshot.empty) {
-                    for (const paymentDoc of paymentsSnapshot.docs) {
+                let totalAmount = 0;
+                const validPayments = paymentsSnapshot.docs.filter(doc => {
+                    const status = doc.data().status;
+                    return status === 'completed' || status === 'pending';
+                });
+                if (validPayments.length > 0) {
+                    for (const paymentDoc of validPayments) {
                         const paymentData = paymentDoc.data();
                         const paymentKey = paymentData.payment_key;
                         const cancelReason = `참가 취소 신청 (${withdrawalData?.reason})`;
-                        try {
-                            const tossResponse = await fetch(`https://api.tosspayments.com/v1/payments/${paymentKey}/cancel`, {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Basic ${Buffer.from(tossSecretKey + ':').toString('base64')}`,
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    cancelReason: cancelReason,
-                                }),
-                            });
-                            if (!tossResponse.ok) {
-                                const tossError = await tossResponse.json();
-                                console.error('Toss cancellation failed:', tossError);
-                                if (tossError.code !== 'ALREADY_CANCELED_PAYMENT') {
-                                    console.warn(`Payment cancellation warning: ${tossError.message}. Proceeding with user deletion.`);
-                                }
-                            }
-                            await paymentDoc.ref.update({
-                                status: 'cancelled',
-                                cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
-                                cancel_reason: cancelReason,
-                            });
-                        }
-                        catch (singlePaymentError) {
-                            console.error(`Failed to cancel payment:`, singlePaymentError);
-                        }
-                        if (withdrawalData?.user_id) {
+                        if (paymentData.status === 'completed' && paymentKey) {
                             try {
-                                const userDoc = await db.collection('users').doc(withdrawalData.user_id).get();
-                                const userData = userDoc.data();
-                                if (userData && userData.phone && userData.name) {
-                                    let totalAmount = 0;
-                                    paymentsSnapshot.docs.forEach((doc) => {
-                                        totalAmount += doc.data().amount || 0;
-                                    });
-                                    if (totalAmount > 0) {
-                                        const alimtalkService = await getAlimtalkService();
-                                        await alimtalkService.sendRefundComplete(userData.phone, userData.name, totalAmount);
+                                const tossResponse = await fetch(`https://api.tosspayments.com/v1/payments/${paymentKey}/cancel`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Basic ${Buffer.from(tossSecretKey + ':').toString('base64')}`,
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        cancelReason: cancelReason,
+                                    }),
+                                });
+                                if (!tossResponse.ok) {
+                                    const tossError = await tossResponse.json();
+                                    if (tossError.code !== 'ALREADY_CANCELED_PAYMENT') {
+                                        console.warn(`Payment cancellation warning: ${tossError.message}`);
                                     }
                                 }
                             }
-                            catch (alimtalkErr) {
-                                console.error('Failed to send withdrawal cancellation Alimtalk:', alimtalkErr);
+                            catch (singlePaymentError) {
+                                console.error(`Failed to cancel payment ${paymentKey}:`, singlePaymentError);
                             }
                         }
+                        totalAmount += paymentData.amount || 0;
+                        await paymentDoc.ref.update({
+                            status: 'cancelled',
+                            cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
+                            cancel_reason: cancelReason,
+                        });
+                    }
+                    try {
+                        const userDoc = await db.collection('users').doc(withdrawalData.user_id).get();
+                        const userData = userDoc.data();
+                        if (userData && userData.phone && userData.name && totalAmount > 0) {
+                            const alimtalkService = await getAlimtalkService();
+                            const alimResult = await alimtalkService.sendRefundComplete(userData.phone, userData.name, totalAmount);
+                            console.log('Cancellation complete AlimTalk result:', alimResult);
+                        }
+                    }
+                    catch (alimtalkErr) {
+                        console.error('Failed to send withdrawal cancellation AlimTalk:', alimtalkErr);
                     }
                 }
             }
             catch (paymentError) {
-                console.error('Payment cancellation error (continuing with user deletion):', paymentError);
+                console.error('Payment cancellation process error:', paymentError);
             }
             await admin.auth().deleteUser(withdrawalData?.user_id);
             await db.collection('users').doc(withdrawalData?.user_id).delete();

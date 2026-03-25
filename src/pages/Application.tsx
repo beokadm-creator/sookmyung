@@ -420,10 +420,10 @@ export default function Application() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-base font-medium text-gray-700 mb-2">120주년 축하 메세제 <span className="text-gray-400 text-xs">(선택사항)</span></label>
+                      <label className="block text-base font-medium text-gray-700 mb-2">120주년 축하 메시지 <span className="text-gray-400 text-xs">(선택사항)</span></label>
                       <div className="relative">
                         <MessageSquare className="absolute left-4 top-6 text-gray-400 w-5 h-5" />
-                        <textarea name="message" value={formData.message} onChange={handleChange} rows={3} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="숙명여대 창학 120주년 축하 메세지를 남겨주세요." />
+                        <textarea name="message" value={formData.message} onChange={handleChange} rows={3} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="숙명여대 창학 120주년 축하 메시지를 남겨주세요." />
                       </div>
                     </div>
                   </div>

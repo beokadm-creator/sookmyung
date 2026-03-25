@@ -363,29 +363,39 @@ export const requestWithdrawal = functions.region('asia-northeast3').https.onCal
     // Send Refund Request Alimtalk
     try {
       if (userData && userData.phone && userData.name) {
+        console.log(`Checking payments for withdrawal alimtalk: ${userId}`);
         const paymentsSnapshot = await db.collection('payments')
           .where('user_id', '==', userId)
-          .where('status', '==', 'completed')
           .get();
+        
         let totalAmount = 0;
-        let orderId = withdrawalRef.id;
+        let hasActivePayment = false;
+        
         paymentsSnapshot.docs.forEach((doc: any) => {
-          totalAmount += doc.data().amount || 0;
-          if (doc.data().payment_key) orderId = doc.data().payment_key; // or anything else that signifies the order
+          const p = doc.data();
+          if (p.status === 'completed' || p.status === 'pending') {
+            totalAmount += p.amount || 0;
+            hasActivePayment = true;
+          }
         });
         
-        if (totalAmount > 0) {
+        console.log(`Withdrawal alimtalk info: totalAmount=${totalAmount}, hasActivePayment=${hasActivePayment}`);
+
+        if (hasActivePayment) {
           const now = new Date();
           const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000));
           const formattedDate = `${kstDate.getMonth() + 1}월 ${kstDate.getDate()}일`;
           
           const alimtalkService = await getAlimtalkService();
-          await alimtalkService.sendRefundRequest(
+          const alimResult = await alimtalkService.sendRefundRequest(
             userData.phone,
             userData.name,
             totalAmount,
             formattedDate
           );
+          console.log(`Refund request AlimTalk result for ${userData.phone}:`, alimResult);
+        } else {
+          console.log(`No active payments found for user ${userId}, skipping notification.`);
         }
       }
     } catch (alimtalkError) {
@@ -457,84 +467,78 @@ export const processWithdrawal = functions.region('asia-northeast3').https.onCal
 
       // 1. Toss Payments 결제 취소 (먼저 결제 취소)
       try {
-        // 사용자의 결제 정보 조회
+        console.log(`Processing withdrawal for user: ${withdrawalData?.user_id}`);
+        // 사용자의 모든 유효한 결제 정보 조회 (완료 및 대기)
         const paymentsSnapshot = await db.collection('payments')
           .where('user_id', '==', withdrawalData?.user_id)
-          .where('status', '==', 'completed')
           .get();
 
-        if (!paymentsSnapshot.empty) {
-          // Toss Payments 취소 API 호출
-          for (const paymentDoc of paymentsSnapshot.docs) {
+        let totalAmount = 0;
+        const validPayments = paymentsSnapshot.docs.filter(doc => {
+          const status = doc.data().status;
+          return status === 'completed' || status === 'pending';
+        });
+
+        if (validPayments.length > 0) {
+          for (const paymentDoc of validPayments) {
             const paymentData = paymentDoc.data();
             const paymentKey = paymentData.payment_key;
             const cancelReason = `참가 취소 신청 (${withdrawalData?.reason})`;
 
-            try {
-              // Toss Payments 취소
-              const tossResponse = await fetch(`https://api.tosspayments.com/v1/payments/${paymentKey}/cancel`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Basic ${Buffer.from(tossSecretKey + ':').toString('base64')}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  cancelReason: cancelReason,
-                }),
-              });
-
-              if (!tossResponse.ok) {
-                const tossError = await tossResponse.json() as { code?: string; message?: string };
-                console.error('Toss cancellation failed:', tossError);
-
-                // 이미 취소된 경우는 계속 진행
-                if (tossError.code !== 'ALREADY_CANCELED_PAYMENT') {
-                  // 결제 취소 실패 시 로그만 남기고 계속 진행 (사용자 삭제는 계속 진행)
-                  console.warn(`Payment cancellation warning: ${tossError.message}. Proceeding with user deletion.`);
-                }
-              }
-
-              // 결제 상태 업데이트 (성공 또는 이미 취소된 경우)
-              await paymentDoc.ref.update({
-                status: 'cancelled',
-                cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
-                cancel_reason: cancelReason,
-              });
-            } catch (singlePaymentError: any) {
-              console.error(`Failed to cancel payment:`, singlePaymentError);
-            }
-
-            // 1-1. Send Cancellation Alimtalk (Inside try block where paymentsSnapshot is defined)
-            if (withdrawalData?.user_id) {
+            // 1-1. 카드 결제인 경우에만 Toss API 호출
+            if (paymentData.status === 'completed' && paymentKey) {
               try {
-                const userDoc = await db.collection('users').doc(withdrawalData.user_id).get();
-                const userData = userDoc.data();
-                if (userData && userData.phone && userData.name) {
-                  // Calculate total cancelled amount
-                  let totalAmount = 0;
-                  paymentsSnapshot.docs.forEach((doc: any) => {
-                    totalAmount += doc.data().amount || 0;
-                  });
+                const tossResponse = await fetch(`https://api.tosspayments.com/v1/payments/${paymentKey}/cancel`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Basic ${Buffer.from(tossSecretKey + ':').toString('base64')}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    cancelReason: cancelReason,
+                  }),
+                });
 
-                  if (totalAmount > 0) {
-                    const alimtalkService = await getAlimtalkService();
-                    await alimtalkService.sendRefundComplete(
-                      userData.phone,
-                      userData.name,
-                      totalAmount
-                    );
+                if (!tossResponse.ok) {
+                  const tossError = await tossResponse.json() as { code?: string; message?: string };
+                  if (tossError.code !== 'ALREADY_CANCELED_PAYMENT') {
+                    console.warn(`Payment cancellation warning: ${tossError.message}`);
                   }
                 }
-              } catch (alimtalkErr) {
-                console.error('Failed to send withdrawal cancellation Alimtalk:', alimtalkErr);
+              } catch (singlePaymentError: any) {
+                console.error(`Failed to cancel payment ${paymentKey}:`, singlePaymentError);
               }
             }
+
+            totalAmount += paymentData.amount || 0;
+
+            // 결제 상태 업데이트
+            await paymentDoc.ref.update({
+              status: 'cancelled',
+              cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
+              cancel_reason: cancelReason,
+            });
+          }
+
+          // 1-2. Send Cancellation Alimtalk (딱 한 번만 발송)
+          try {
+            const userDoc = await db.collection('users').doc(withdrawalData.user_id).get();
+            const userData = userDoc.data();
+            if (userData && userData.phone && userData.name && totalAmount > 0) {
+              const alimtalkService = await getAlimtalkService();
+              const alimResult = await alimtalkService.sendRefundComplete(
+                userData.phone,
+                userData.name,
+                totalAmount
+              );
+              console.log('Cancellation complete AlimTalk result:', alimResult);
+            }
+          } catch (alimtalkErr) {
+            console.error('Failed to send withdrawal cancellation AlimTalk:', alimtalkErr);
           }
         }
       } catch (paymentError: any) {
-        // 결제 취소 실패 시에도 사용자 삭제는 진행 (로그만 남김)
-        console.error('Payment cancellation error (continuing with user deletion):', paymentError);
-        // 에러를 throw하지 않고 계속 진행
+        console.error('Payment cancellation process error:', paymentError);
       }
 
       // 2. Firebase Auth 사용자 삭제

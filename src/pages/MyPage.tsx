@@ -210,16 +210,16 @@ export default function MyPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {!user.paymentStatus && (
-                    <Button
-                      variant="gold"
-                      fullWidth
-                      onClick={() => navigate('/checkout')}
-                    >
-                      결제하기
-                    </Button>
-                  )}
+                 <div className="space-y-3">
+                   {!user.paymentStatus && (user as any).vbankStatus !== 'pending' && (
+                     <Button
+                       variant="gold"
+                       fullWidth
+                       onClick={() => navigate('/checkout')}
+                     >
+                       결제하기
+                     </Button>
+                   )}
                   <Button
                     variant="outline"
                     fullWidth
