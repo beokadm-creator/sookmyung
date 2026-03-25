@@ -7,9 +7,11 @@ import ProgramSection from '@/components/ui/ProgramSection';
 import NoticeSection from '@/components/ui/NoticeSection';
 import MessageModal from '@/components/ui/MessageModal';
 import { Button } from '@/components/ui/Button';
+import { X } from 'lucide-react';
 
 export default function Main() {
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
 
   return (
     <Layout>
@@ -36,12 +38,12 @@ export default function Main() {
 
           <CountdownTimer targetDate="2026-05-21T17:00:00" className="my-12 scale-110" />
 
-          <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mt-12">
-            <Link to="/application" className="w-full sm:w-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 justify-center items-center mt-8 md:mt-12 w-full max-w-sm sm:max-w-2xl md:max-w-3xl mx-auto px-6 sm:px-0">
+            <Link to="/application" className="w-full">
               <Button 
                 variant="primary" 
                 size="lg" 
-                className="w-full sm:w-auto min-w-[220px] text-xl py-7 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-white border-none shadow-xl hover:shadow-yellow-500/30 transition-all hover:-translate-y-1"
+                className="w-full text-base md:text-lg py-4 md:py-5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-white border-none shadow-xl hover:shadow-yellow-500/30 transition-all hover:-translate-y-1"
                 aria-label="참가신청"
               >
                 참가신청
@@ -50,8 +52,18 @@ export default function Main() {
             <Button 
               variant="outline" 
               size="lg"
-              className="w-full sm:w-auto min-w-[220px] text-xl py-7 bg-white/10 hover:bg-white/20 text-white border-white/40 backdrop-blur-sm transition-all hover:-translate-y-1"
+              className="w-full text-base md:text-lg py-4 md:py-5 bg-white/10 hover:bg-white/20 text-white border-white/40 backdrop-blur-sm transition-all hover:-translate-y-1"
+              onClick={() => setIsInvitationModalOpen(true)}
+              aria-label="초대장"
+            >
+              초대장
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="w-full text-base md:text-lg py-4 md:py-5 bg-white/10 hover:bg-white/20 text-white border-white/40 backdrop-blur-sm transition-all hover:-translate-y-1"
               onClick={() => setIsMessageModalOpen(true)}
+              aria-label="축하 메시지 보내기"
             >
               축하 메시지 보내기
             </Button>
@@ -68,12 +80,35 @@ export default function Main() {
       {/* Notice Section */}
       <NoticeSection />
       
-      {/* Modal */}
+      {/* Modals */}
       {isMessageModalOpen && (
         <MessageModal 
           isOpen={isMessageModalOpen} 
           onClose={() => setIsMessageModalOpen(false)} 
         />
+      )}
+
+      {isInvitationModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-md animate-fade-in" 
+            onClick={() => setIsInvitationModalOpen(false)}
+          />
+          <div className="relative max-w-sm md:max-w-lg w-full bg-white rounded-3xl overflow-hidden shadow-2xl animate-fade-in group">
+            <button
+              onClick={() => setIsInvitationModalOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all md:opacity-0 md:group-hover:opacity-100"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img 
+              src="/main/main.jpg" 
+              alt="초대장" 
+              className="w-full h-auto object-contain cursor-zoom-out"
+              onClick={() => setIsInvitationModalOpen(false)}
+            />
+          </div>
+        </div>
       )}
     </Layout>
   );

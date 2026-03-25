@@ -19,10 +19,15 @@ function NoticeBox() {
         </span>
       </div>
       <div className="px-6 py-5 space-y-4 text-gray-800 text-base">
-        <p className="leading-relaxed">
-          <strong>One Table(10좌석) 250만원</strong> 신청을 희망하시는 동문은 아래 정보를 입력하지 마시고 
-          총동문회 사무국으로 별도 문의해 주세요.
-        </p>
+        <div className="leading-relaxed">
+          <p className="font-bold mb-1">One table(10좌석/250만원) 신청을 희망하시는 동문은</p>
+          <p className="mb-4">총동문회 사무국으로 별도 문의 바랍니다.</p>
+          
+          <div className="text-sm space-y-1 bg-white p-3 border border-amber-200 rounded-lg mb-4">
+            <p><span className="font-bold text-blue-900">참가비:</span> 일반예약 28만원/ 조기예약(4/14까지) 25만원</p>
+            <p className="text-xs text-gray-500">*One Table(10좌석) 금액도 조기예약 기간 동일 적용</p>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-amber-50 rounded-lg px-4 py-3 border border-amber-200">
             <p className="text-xs text-gray-600 mb-1 font-medium">총동문회 사무국</p>

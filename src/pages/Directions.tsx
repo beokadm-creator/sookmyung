@@ -126,7 +126,7 @@ export default function Directions() {
                           <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                             <Car className="w-4 h-4" /> Parking
                           </h3>
-                          <p className="text-blue-800 font-medium whitespace-nowrap">
+                          <p className="text-blue-800 font-medium">
                             행사 당일 참가자 분들께 <span className="underline decoration-2 underline-offset-2">무료 주차 티켓</span>을 지원해 드립니다.
                           </p>
                         </div>
@@ -184,7 +184,7 @@ export default function Directions() {
                     <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                       <Car className="w-4 h-4" /> Parking
                     </h3>
-                    <p className="text-blue-800 font-medium whitespace-nowrap">
+                    <p className="text-blue-800 font-medium">
                       행사 당일 참가자 분들께 <span className="underline decoration-2 underline-offset-2">무료 주차 티켓</span>을 지원해 드립니다.
                     </p>
                   </div>
@@ -371,7 +371,7 @@ export default function Directions() {
                       <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                         <Car className="w-4 h-4" /> Parking
                       </h3>
-                      <p className="text-blue-800 font-medium whitespace-nowrap">
+                      <p className="text-blue-800 font-medium">
                         행사 당일 참가자 분들께 <span className="underline decoration-2 underline-offset-2">무료 주차 티켓</span>을 지원해 드립니다.
                       </p>
                     </div>
@@ -400,7 +400,7 @@ export default function Directions() {
                     <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                       <Car className="w-4 h-4" /> Parking
                     </h3>
-                    <p className="text-blue-800 font-medium whitespace-nowrap">
+                    <p className="text-blue-800 font-medium">
                       행사 당일 참가자 분들께 <span className="underline decoration-2 underline-offset-2">무료 주차 티켓</span>을 지원해 드립니다.
                     </p>
                   </div>
