@@ -1394,19 +1394,25 @@ export const sendManualAlimtalk = functions.region('asia-northeast3').https.onCa
     if (templateType === 'welcome') {
       const paymentsSnapshot = await db.collection('payments')
         .where('user_id', '==', userId)
-        .orderBy('created_at', 'desc')
-        .limit(1)
         .get();
-      const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
-      const orderId = paymentsSnapshot.docs[0]?.data()?.order_id || 'manual';
+      
+      const sortedPayments = paymentsSnapshot.docs
+        .map(doc => doc.data())
+        .sort((a: any, b: any) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+        
+      const amount = sortedPayments[0]?.amount || 0;
+      const orderId = sortedPayments[0]?.order_id || 'manual';
       result = await alimtalkService.sendWelcomeMessage(userData.phone, userData.name, amount, orderId);
     } else if (templateType === 'pending') {
       const paymentsSnapshot = await db.collection('payments')
         .where('user_id', '==', userId)
-        .orderBy('created_at', 'desc')
-        .limit(1)
         .get();
-      const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
+      
+      const sortedPayments = paymentsSnapshot.docs
+        .map(doc => doc.data())
+        .sort((a: any, b: any) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+        
+      const amount = sortedPayments[0]?.amount || 0;
       result = await alimtalkService.sendVbankPending(userData.phone, userData.name, amount);
     } else {
       throw new functions.https.HttpsError('invalid-argument', '지원하지 않는 템플릿입니다.');
