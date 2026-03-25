@@ -33,3 +33,22 @@ export function validatePhoneNumber(phone: string): boolean {
 export function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
+export function formatDate(timestamp: any): string {
+  if (!timestamp) return '-';
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function formatAmount(amount: number): string {
+  return new Intl.NumberFormat('ko-KR', {
+    style: 'currency',
+    currency: 'KRW',
+  }).format(amount).replace('₩', '').trim() + '원';
+}
