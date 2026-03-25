@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateUserStatus = exports.sendManualAlimtalk = exports.approveVbank = exports.applyVbank = exports.cancelPaymentByAdmin = exports.getAlimtalkTemplates = exports.initializeData = exports.saveSiteConfig = exports.getSiteConfig = exports.deleteEvent = exports.saveEvent = exports.getEvents = exports.deleteGalleryItem = exports.saveGalleryItem = exports.getGalleryItems = exports.deleteTimeline = exports.saveTimeline = exports.getTimelines = exports.processWithdrawal = exports.requestWithdrawal = exports.checkEmailDuplicate = exports.createAdmin = exports.confirmPayment = exports.onUserCreated = exports.fetchUserByPhone = exports.requestPasswordReset = exports.loginWithPhone = exports.registerWithPhone = exports.verifyCode = exports.sendVerificationCode = void 0;
+exports.deleteUserByAdmin = exports.updateUserStatus = exports.sendManualAlimtalk = exports.approveVbank = exports.applyVbank = exports.cancelPaymentByAdmin = exports.getAlimtalkTemplates = exports.initializeData = exports.saveSiteConfig = exports.getSiteConfig = exports.deleteEvent = exports.saveEvent = exports.getEvents = exports.deleteGalleryItem = exports.saveGalleryItem = exports.getGalleryItems = exports.deleteTimeline = exports.saveTimeline = exports.getTimelines = exports.processWithdrawal = exports.requestWithdrawal = exports.checkEmailDuplicate = exports.createAdmin = exports.confirmPayment = exports.onUserCreated = exports.fetchUserByPhone = exports.requestPasswordReset = exports.loginWithPhone = exports.registerWithPhone = exports.verifyCode = exports.sendVerificationCode = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const axios_1 = __importDefault(require("axios"));
@@ -1162,20 +1162,22 @@ exports.sendManualAlimtalk = functions.region('asia-northeast3').https.onCall(as
         if (templateType === 'welcome') {
             const paymentsSnapshot = await db.collection('payments')
                 .where('user_id', '==', userId)
-                .orderBy('created_at', 'desc')
-                .limit(1)
                 .get();
-            const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
-            const orderId = paymentsSnapshot.docs[0]?.data()?.order_id || 'manual';
+            const sortedPayments = paymentsSnapshot.docs
+                .map(doc => doc.data())
+                .sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+            const amount = sortedPayments[0]?.amount || 0;
+            const orderId = sortedPayments[0]?.order_id || 'manual';
             result = await alimtalkService.sendWelcomeMessage(userData.phone, userData.name, amount, orderId);
         }
         else if (templateType === 'pending') {
             const paymentsSnapshot = await db.collection('payments')
                 .where('user_id', '==', userId)
-                .orderBy('created_at', 'desc')
-                .limit(1)
                 .get();
-            const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
+            const sortedPayments = paymentsSnapshot.docs
+                .map(doc => doc.data())
+                .sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+            const amount = sortedPayments[0]?.amount || 0;
             result = await alimtalkService.sendVbankPending(userData.phone, userData.name, amount);
         }
         else {
@@ -1216,11 +1218,13 @@ exports.updateUserStatus = functions.region('asia-northeast3').https.onCall(asyn
                     const alimtalkService = await getAlimtalkService();
                     const paymentsSnapshot = await db.collection('payments')
                         .where('user_id', '==', userId)
-                        .orderBy('created_at', 'desc')
-                        .limit(1)
                         .get();
-                    const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
-                    const orderId = paymentsSnapshot.docs[0]?.data()?.order_id || 'manual';
+                    const sortedPayments = paymentsSnapshot.docs
+                        .map(doc => doc.data())
+                        .sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+                    const lastPayment = sortedPayments[0];
+                    const amount = lastPayment?.amount || 0;
+                    const orderId = lastPayment?.order_id || 'manual';
                     await alimtalkService.sendWelcomeMessage(userData.phone, userData.name, amount, orderId);
                 }
             }
@@ -1236,10 +1240,11 @@ exports.updateUserStatus = functions.region('asia-northeast3').https.onCall(asyn
                     const alimtalkService = await getAlimtalkService();
                     const paymentsSnapshot = await db.collection('payments')
                         .where('user_id', '==', userId)
-                        .orderBy('created_at', 'desc')
-                        .limit(1)
                         .get();
-                    const amount = paymentsSnapshot.docs[0]?.data()?.amount || 0;
+                    const sortedPayments = paymentsSnapshot.docs
+                        .map(doc => doc.data())
+                        .sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+                    const amount = sortedPayments[0]?.amount || 0;
                     await alimtalkService.sendVbankPending(userData.phone, userData.name, amount);
                 }
             }
@@ -1254,5 +1259,38 @@ exports.updateUserStatus = functions.region('asia-northeast3').https.onCall(asyn
         if (error instanceof functions.https.HttpsError)
             throw error;
         throw new functions.https.HttpsError('internal', `상태 변경 중 오류: ${error.message}`);
+    }
+});
+exports.deleteUserByAdmin = functions.region('asia-northeast3').https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+    }
+    const { userId } = data;
+    if (!userId)
+        throw new functions.https.HttpsError('invalid-argument', '사용자 ID가 필요합니다.');
+    try {
+        const adminUserDoc = await db.collection('users').doc(context.auth.uid).get();
+        const isAdmin = adminUserDoc.data()?.role === 'admin' || adminUserDoc.data()?.email === 'aaron@beoksolution.com';
+        if (!adminUserDoc.exists || !isAdmin) {
+            throw new functions.https.HttpsError('permission-denied', '관리자 권한이 필요합니다.');
+        }
+        await db.collection('users').doc(userId).delete();
+        const paymentsQuery = await db.collection('payments').where('user_id', '==', userId).get();
+        const batch = db.batch();
+        paymentsQuery.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        try {
+            await admin.auth().deleteUser(userId);
+        }
+        catch (authErr) {
+            console.warn(`Failed to delete Auth record for ${userId}:`, authErr);
+        }
+        return { success: true, message: '사용자 정보가 성공적으로 삭제되었습니다.' };
+    }
+    catch (error) {
+        console.error('Delete user by admin error:', error);
+        if (error instanceof functions.https.HttpsError)
+            throw error;
+        throw new functions.https.HttpsError('internal', `사용자 삭제 중 오류: ${error.message}`);
     }
 });

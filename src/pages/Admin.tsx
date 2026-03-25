@@ -804,9 +804,7 @@ export default function Admin() {
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            {p.payment_type === 'membership' && '회비'}
-                            {p.payment_type === 'donation' && '후원금'}
-                            {p.payment_type === 'event' && '이벤트'}
+                            전야제 참가비
                           </td>
                           <td className="py-3 px-4 text-sm">{formatDate(p.created_at)}</td>
                           <td className="py-3 px-4">

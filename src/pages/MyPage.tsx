@@ -448,11 +448,9 @@ export default function MyPage() {
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <p className="font-medium">
-                              {payment.payment_type === 'membership' && '회비'}
-                              {payment.payment_type === 'donation' && '후원금'}
-                              {payment.payment_type === 'event' && '이벤트'}
-                            </p>
+                             <p className="font-medium">
+                               전야제 참가비
+                             </p>
                             <p className="text-sm text-gray-600">
                               주문번호: {payment.order_id}
                             </p>
