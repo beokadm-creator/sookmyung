@@ -133,7 +133,7 @@ class NHNAlimTalkService {
             confirmnumber: code
         });
     }
-    async sendWelcomeMessage(phone, name, receiptNumber) {
+    async sendWelcomeMessage(phone, name, amount, orderId) {
         const template = this.config.templates.welcome;
         if (!template || !template.enabled) {
             console.log('Welcome AlimTalk disabled or not configured');
@@ -141,7 +141,8 @@ class NHNAlimTalkService {
         }
         return this.send(template.templateId, phone, {
             name: name,
-            receiptNumber: receiptNumber
+            amount: amount.toLocaleString(),
+            orderId: orderId
         });
     }
     async sendEventRegistration(phone, name, eventTitle, date, location) {
@@ -184,6 +185,17 @@ class NHNAlimTalkService {
         const template = this.config.templates.cancel;
         if (!template || !template.enabled) {
             console.log('Refund complete AlimTalk disabled or not configured');
+            return { success: true };
+        }
+        return this.send(template.templateId, phone, {
+            name: name,
+            amount: amount.toLocaleString()
+        });
+    }
+    async sendVbankPending(phone, name, amount) {
+        const template = this.config.templates.vbankPending;
+        if (!template || !template.enabled) {
+            console.log('Vbank pending AlimTalk disabled or not configured');
             return { success: true };
         }
         return this.send(template.templateId, phone, {

@@ -719,11 +719,30 @@ export default function Admin() {
                             )}
                             <button
                               onClick={() => openUserModal(u)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                               title="상세보기"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
+
+                            <button
+                                onClick={async () => {
+                                  if (window.confirm(`${u.name}님의 정보를 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+                                    try {
+                                      const deleteUserByAdmin = httpsCallable(functions, 'deleteUserByAdmin');
+                                      await deleteUserByAdmin({ userId: u.id });
+                                      alert('삭제되었습니다.');
+                                      fetchAdminData();
+                                    } catch (err: any) {
+                                      alert('삭제 중 오류 발생: ' + err.message);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="사용자 삭제"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                           </div>
                         </td>
                       </tr>

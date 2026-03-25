@@ -42,7 +42,14 @@ const admin = __importStar(require("firebase-admin"));
 const cors_1 = __importDefault(require("cors"));
 const common_1 = require("../utils/common");
 const db = admin.firestore();
-const corsHandler = (0, cors_1.default)({ origin: true });
+const corsHandler = (0, cors_1.default)({
+    origin: [
+        'https://smwu120th.or.kr',
+        'https://www.smwu120th.or.kr',
+        'https://sookmyung-97032.web.app',
+        'https://sookmyung-97032.firebaseapp.com',
+    ],
+});
 exports.confirmPayment = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
     corsHandler(req, res, async () => {
         if (req.method !== 'POST') {

@@ -339,27 +339,7 @@ export default function MyPage() {
                       <p className="text-lg font-medium">{user.department || '-'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center p-4 bg-sookmyung-blue-50 rounded-lg">
-                    <Building2 className="w-8 h-8 text-sookmyung-blue-600 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-600">직장명</p>
-                      <p className="text-lg font-medium">{user.company || '-'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center p-4 bg-sookmyung-blue-50 rounded-lg">
-                    <Building2 className="w-8 h-8 text-sookmyung-blue-600 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-600">부서명</p>
-                      <p className="text-lg font-medium">{user.company_department || '-'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center p-4 bg-sookmyung-blue-50 rounded-lg">
-                    <Briefcase className="w-8 h-8 text-sookmyung-blue-600 mr-3" />
-                    <div>
-                      <p className="text-sm text-gray-600">직급</p>
-                      <p className="text-lg font-medium">{user.position || '-'}</p>
-                    </div>
-                  </div>
+                  {/* Job info removed as requested */}
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
@@ -381,14 +361,7 @@ export default function MyPage() {
                         )}
                       </div>
                     </div>
-                    <div className={`p-4 rounded-lg border flex justify-between items-center ${user.additional_program_campus_tour ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Ⅱ. 캠퍼스 투어</p>
-                        <p className={`text-lg font-bold mt-1 ${user.additional_program_campus_tour ? 'text-green-600' : 'text-gray-400'}`}>
-                          {user.additional_program_campus_tour ? '✅ 신청함' : '❌ 미신청'}
-                        </p>
-                      </div>
-                    </div>
+                    {/* Campus tour section removed as requested */}
                   </div>
                 </div>
 

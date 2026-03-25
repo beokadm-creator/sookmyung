@@ -451,7 +451,7 @@ export default function Application() {
                         <p className="text-sm font-bold text-blue-900 mb-2">프로그램 및 참가비 (택 1 필수)</p>
                         {['option1', 'option2'].map((opt) => (
                           <label key={opt} className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.additional_program_domestic_tour_option === opt ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-200'}`}>
-                            <input type="radio" name="domestic_tour_option" checked={formData.additional_program_domestic_tour_option === opt} onChange={() => setFormData({ ...formData, additional_program_domestic_tour_option: opt, additional_program_domestic_tour: true })} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
+                            <input type="radio" name="domestic_tour_option" checked={formData.additional_program_domestic_tour_option === opt} onChange={() => setFormData({ ...formData, additional_program_domestic_tour_option: opt as 'option1' | 'option2', additional_program_domestic_tour: true })} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
                             <span className="ml-3 text-base text-gray-900 font-bold">
                               {opt === 'option1' ? '선택1. 동문회관 게스트룸 숙박+관광+식사: ' : '선택2. 삼성동 신라스테이 숙박+관광+식사: '}
                               <span className="text-blue-600 font-black">{opt === 'option1' ? 'USD 700' : 'USD 850'}</span>

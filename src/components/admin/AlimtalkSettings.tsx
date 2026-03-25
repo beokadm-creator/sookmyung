@@ -26,6 +26,7 @@ export default function AlimtalkSettings({ user }: AlimtalkSettingsProps) {
       payment: { templateId: '', enabled: true },
       cancel: { templateId: '', enabled: true },
       passwordReset: { templateId: '', enabled: true },
+      vbankPending: { templateId: '', enabled: true },
     },
     updatedAt: serverTimestamp(),
     updatedBy: '',
@@ -50,6 +51,7 @@ export default function AlimtalkSettings({ user }: AlimtalkSettingsProps) {
             payment: data.templates?.payment || { templateId: '', enabled: true },
             cancel: data.templates?.cancel || { templateId: '', enabled: true },
             passwordReset: data.templates?.passwordReset || { templateId: '', enabled: true },
+            vbankPending: data.templates?.vbankPending || { templateId: '', enabled: true },
             ...data.templates
           }
         });
@@ -232,6 +234,7 @@ export default function AlimtalkSettings({ user }: AlimtalkSettingsProps) {
             { key: 'payment', label: '환불접수', desc: '실제 환불 접수(취소 요청) 시 발송됩니다. 변수: #{name}, #{date}, #{amount}' },
             { key: 'cancel', label: '환불완료', desc: '관리자에서 환불을 완료해서 취소가 될때 발송됩니다. 변수: #{name}, #{amount}' },
             { key: 'passwordReset', label: '비밀번호 찾기', desc: '비밀번호 찾기 요청 시 발송됩니다. 변수: #{password}' },
+            { key: 'vbankPending', label: '무통장입금 신청', desc: '무통장입금 신청 시 발송됩니다. 변수: #{name}, #{amount}' },
           ].map((template) => (
             <div key={template.key} className="p-4 border rounded-lg bg-gray-50">
               <div className="flex justify-between items-start mb-2">

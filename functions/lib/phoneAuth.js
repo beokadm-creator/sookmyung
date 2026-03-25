@@ -381,20 +381,31 @@ exports.registerWithPhone = functions.region('asia-northeast3').https.onCall(asy
             }
             throw new functions.https.HttpsError('internal', `사용자 인증 정보 생성에 실패했습니다: ${authError.message}`);
         }
-        const alimtalkService = await getService();
-        await alimtalkService.sendWelcomeMessage(phone, name, userId);
+        let customToken = null;
+        try {
+            customToken = await admin.auth().createCustomToken(userId);
+        }
+        catch (tokenError) {
+            console.error('Failed to create custom token:', tokenError);
+        }
         return {
             success: true,
             userId: userId,
+            token: customToken,
             message: '참가 신청이 완료되었습니다.',
         };
     }
     catch (error) {
-        console.error('Register with phone error:', error);
+        console.error('Register with phone detailed error:', error);
         if (error instanceof functions.https.HttpsError) {
             throw error;
         }
-        throw new functions.https.HttpsError('internal', '참가 신청 중 오류가 발생했습니다.');
+        let message = '참가 신청 중 시스템 오류가 발생했습니다.';
+        if (error.code === 'auth/invalid-phone-number')
+            message = '유효하지 않은 전화번호 형식입니다.';
+        if (error.code === 'auth/phone-number-already-exists')
+            message = '이미 등록된 전화번호입니다.';
+        throw new functions.https.HttpsError('internal', `${message} (${error.message || String(error)})`);
     }
 });
 exports.loginWithPhone = functions.region('asia-northeast3').https.onCall(async (data, context) => {
@@ -595,7 +606,7 @@ exports.fetchUserByPhone = functions.region('asia-northeast3').https.onCall(asyn
                 position: userData.position,
                 message: userData.message,
                 paymentStatus: userData.paymentStatus,
-                created_at: userData.created_at,
+                created_at: userData.created_at ? userData.created_at.toDate().toISOString() : null,
             }
         };
     }
