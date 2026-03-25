@@ -15,13 +15,12 @@ function NoticeBox() {
       <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
         <span className="flex items-center gap-2 font-bold text-amber-900 text-base md:text-lg">
           <span>📢</span>
-          One Table 및 무통장입금 신청 안내
+          One Table 신청 안내
         </span>
       </div>
       <div className="px-6 py-5 space-y-4 text-gray-800 text-base">
         <p className="leading-relaxed">
-          <strong>One Table(10좌석) 250만원</strong> 신청을 희망하시거나 
-          <strong>무통장입금</strong> 결제를 희망하시는 동문은 아래 정보를 입력하지 마시고 
+          <strong>One Table(10좌석) 250만원</strong> 신청을 희망하시는 동문은 아래 정보를 입력하지 마시고 
           총동문회 사무국으로 별도 문의해 주세요.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
