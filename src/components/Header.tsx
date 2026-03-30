@@ -13,7 +13,6 @@ type User = {
 const navItems = [
   { label: '인사말', path: '/greetings' },
   { label: '120주년 전야제', path: '/festival' },
-  { label: '참가신청', path: '/application' },
   { label: '신청조회', path: '/check' },
   { label: '오시는 길', path: '/directions' },
   { label: '120주년 자료', path: '/materials' },
@@ -58,20 +57,19 @@ export default function Header() {
     >
       <Link
         to={item.path}
-        className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1 ${isActive(item.path)
-          ? 'bg-sookmyung-blue-600 text-white font-medium'
+        className={`px-4 py-2 rounded-lg transition-colors font-medium ${isActive(item.path)
+          ? 'bg-sookmyung-blue-600 text-white'
           : 'text-gray-700 hover:bg-sookmyung-blue-50 hover:text-sookmyung-blue-600'
           }`}
       >
         {item.label}
-        <ChevronDown className="w-4 h-4" />
       </Link>
     </div>
   )
 
   // Desktop navigation
   const DesktopNav = (
-    <div className="hidden lg:flex items-center gap-2">
+    <div className="hidden lg:flex items-center gap-4 xl:gap-8 ml-8">
       {navItems.map((item) => (
         <NavLink key={item.path} item={item} />
       ))}
@@ -158,32 +156,19 @@ export default function Header() {
     <header className="bg-white shadow-md sticky top-0 z-50 border-b-4 border-sookmyung-blue-600">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2 md:space-x-3 shrink-0">
-          <div className="flex items-center gap-1.5 md:gap-2">
-            <img
-              src="/emblem2.png"
-              alt="엠블럼1"
-              className="h-8 md:h-10 w-auto object-contain"
-            />
-            <div className="w-[1px] h-5 md:h-6 bg-gray-200 mx-0.5" />
-            <img
-              src="/emblem3.jpg"
-              alt="엠블럼2"
-              className="h-8 md:h-10 w-auto object-contain"
-            />
-          </div>
-          <div className="block">
-            <h1 className="text-[0.75rem] sm:text-[0.9rem] md:text-[1.15rem] font-bold text-sookmyung-blue-900 tracking-tighter sm:tracking-tight leading-tight">
-              숙명여자대학교<span className="hidden sm:inline"> </span><br className="sm:hidden" />총동문회
-            </h1>
-          </div>
+        <Link to="/" className="flex items-center shrink-0 pr-4 md:pr-8">
+          <img
+            src="/emblem2.png"
+            alt="숙명여자대학교 120주년 엠블럼"
+            className="h-10 md:h-10 w-auto object-contain"
+          />
         </Link>
 
         {/* Desktop nav */}
         {DesktopNav}
 
         {/* CTA Button on the right */}
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-4">
           {user ? (
             <>
               <Link to="/mypage"><Button variant="primary">마이페이지</Button></Link>
@@ -196,7 +181,9 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <Link to="/application" ><Button variant="primary" aria-label="참가신청">참가신청</Button></Link>
+            <Link to="/application">
+              <Button variant="primary" aria-label="참가신청">참가신청</Button>
+            </Link>
           )}
         </div>
 
