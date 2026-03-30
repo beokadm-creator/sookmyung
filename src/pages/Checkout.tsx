@@ -127,37 +127,41 @@ export default function Checkout() {
       return;
     }
 
+    if (!clientKey) {
+      alert('결제 설정이 누락되었습니다. 관리자에게 문의해주세요.');
+      return;
+    }
+
     try {
       const tossPayments = await loadTossPayments(clientKey);
-
-      const date = new Date();
-      const dateStr = date.getFullYear().toString() +
-        (date.getMonth() + 1).toString().padStart(2, '0') +
-        date.getDate().toString().padStart(2, '0');
-      const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const orderId = `SMWU${dateStr}${randomStr}`;
-
+      
       const storedData = JSON.parse(localStorage.getItem('temp_application_data') || '{}');
-      const userId = storedData.userId || auth.currentUser?.uid;
+      const userId = auth.currentUser?.uid || storedData.userId;
 
+      if (!userId) {
+        alert('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+        navigate('/login');
+        return;
+      }
+
+      const orderId = `EVENT2026_${userId}_${Date.now()}`;
+      
       const paymentParams: any = {
-        amount: amount,
-        taxExemptionAmount: amount,
+        amount: Number(amount),
         orderId: orderId,
-        orderName: '숙명여자대학교 창학120주년 기념 전야제 참가비',
-        successUrl: `${window.location.origin}/success?userId=${userId}`,
-        failUrl: `${window.location.origin}/application?paymentFailed=true`,
+        orderName: '숙명 120주년 전야제 참가신청',
+        successUrl: `${window.location.origin}/success?userId=${userId}&amount=${amount}`,
+        failUrl: `${window.location.origin}/application?message=payment_failed`,
       };
 
-      if (method === 'card') {
-        paymentParams.customerName = userName;
-        paymentParams.customerEmail = userEmail;
-      } else if (method === 'transfer') {
+      if (method === 'transfer') {
         paymentParams.customerName = userName;
         paymentParams.customerMobilePhone = phone || storedData.phone || '';
       }
 
+      console.log('Requesting payment with params:', paymentParams);
       await tossPayments.requestPayment(method === 'card' ? '카드' : '계좌이체', paymentParams);
+      
     } catch (err: any) {
       console.error('Payment error:', err);
       setError(err.message || '결제 처리 중 오류가 발생했습니다.');
