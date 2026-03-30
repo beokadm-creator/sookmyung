@@ -18,34 +18,27 @@ function NoticeBox() {
           One Table 신청 및 참가비 안내
         </span>
       </div>
-      <div className="px-6 py-5 space-y-4 text-gray-800 text-base">
+      <div className="px-6 py-4 space-y-4 text-gray-800 text-base">
         <div className="leading-relaxed">
-          <p className="font-bold mb-4">One Table(10좌석) 신청을 희망하시는 대표 신청자께서는<br className="hidden md:block" /> 총동문회 사무국으로 반드시 연락주시기 바랍니다.</p>
+          <p className="font-bold mb-3">One Table(10좌석) 신청을 희망하시는 대표 신청자께서는<br className="hidden md:block" /> 총동문회 사무국으로 반드시 연락주시기 바랍니다.</p>
           
-          <div className="text-sm md:text-base space-y-2 bg-white p-4 border border-amber-200 rounded-lg mb-4">
+          <div className="text-sm md:text-base space-y-2 bg-white p-3 border border-amber-200 rounded-lg">
             <div className="flex flex-col sm:flex-row gap-x-2">
               <span className="font-bold text-gray-900 shrink-0">참가비:</span>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <p className="font-medium text-gray-800">
                   <span className="text-blue-600 font-bold">일반예약</span> 28만원 / <span className="text-blue-600 font-bold">조기예약</span>(4/14까지) 25만원
                 </p>
                 <p className="font-medium text-gray-800">
-                  One Table(10좌석) 250만원(전기간 동일 적용, 계좌이체만 가능)
+                  One Table(10좌석) 250만원(전기간 동일 적용)
                 </p>
               </div>
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-amber-50 rounded-lg px-4 py-3 border border-amber-200">
-            <p className="text-xs text-gray-600 mb-1 font-medium">총동문회 사무국</p>
-            <p className="font-bold text-gray-900 text-lg">📞 02-712-1212</p>
-          </div>
-          <div className="bg-amber-50 rounded-lg px-4 py-3 border border-amber-200">
-            <p className="text-xs text-gray-600 mb-1 font-medium">무통장입금 계좌 (국민은행)</p>
-            <p className="font-bold text-gray-900 text-lg">763601-04-178355</p>
-            <p className="text-[10px] text-gray-500">예금주: 숙명여자대학교 총동문회</p>
-          </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 bg-amber-50 rounded-lg py-2 border border-amber-200">
+          <p className="text-sm text-gray-600 font-bold">총동문회 사무국 문의</p>
+          <p className="font-bold text-gray-900 text-lg md:text-xl">📞 02-712-1212</p>
         </div>
       </div>
     </div>
@@ -455,8 +448,8 @@ export default function Application() {
                       <label className="flex items-start cursor-pointer">
                         <input type="checkbox" checked={formData.additional_program_domestic_tour || false} onChange={(e) => setFormData({ ...formData, additional_program_domestic_tour: e.target.checked, additional_program_domestic_tour_option: e.target.checked ? formData.additional_program_domestic_tour_option : null })} className="mt-1 w-6 h-6 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
                         <div className="ml-3">
-                          <span className="text-base md:text-lg font-bold text-gray-900">서울 근교 투어</span>
-                          <p className="text-xs md:text-sm text-gray-500 mt-1">2026.5.22(금)~5.24(일) / 2박3일</p>
+                          <span className="text-base md:text-lg font-bold text-gray-900">서울 근교 투어(※ 해외지회 동문만 신청가능)</span>
+                          <p className="text-base md:text-lg font-bold text-gray-900 mt-1">2026.5.22(금)~5.24(일) / 2박3일</p>
                         </div>
                       </label>
                       <div className="mt-5 space-y-3 pl-9">

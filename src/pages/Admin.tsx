@@ -13,7 +13,8 @@ import {
   serverTimestamp, 
   addDoc, 
   orderBy, 
-  deleteDoc 
+  deleteDoc,
+  deleteField
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { 
@@ -88,7 +89,6 @@ export default function Admin() {
 
   const [siteConfigForm, setSiteConfigForm] = useState({
     clientKey: '',
-    secretKey: '',
     service_terms: '',
     privacy_policy: '',
     third_party_provision: '',
@@ -186,10 +186,18 @@ export default function Admin() {
         orderBy('requested_at', 'desc')
       );
       const withdrawalsSnapshot = await getDocs(withdrawalsQuery);
-      const withdrawalsData = withdrawalsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as WithdrawalRequest));
+      const withdrawalsData = withdrawalsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        const user = usersData.find(u => u.id === data.user_id);
+        return {
+          id: doc.id,
+          ...data,
+          user_name: data.user_name || user?.name || '성명 없음',
+          user_email: data.user_email || user?.phone || '정보 없음',
+          user_phone: (data as any).user_phone || user?.phone || '',
+          payment_method: user?.paymentMethod || '정보 없음'
+        } as WithdrawalRequest & { payment_method?: string };
+      });
       setWithdrawalRequests(withdrawalsData);
 
       const messagesQuery = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
@@ -216,13 +224,12 @@ export default function Admin() {
         const siteConfigData = siteConfigDoc.data() as SiteConfig;
         setSiteConfig(siteConfigData);
         setSiteConfigForm({
-          clientKey: siteConfigData.pg_config.clientKey || '',
-          secretKey: siteConfigData.pg_config.secretKey || '',
-          service_terms: siteConfigData.terms.service_terms || '',
-          privacy_policy: siteConfigData.terms.privacy_policy || '',
-          third_party_provision: siteConfigData.terms.third_party_provision || '',
-          marketing_consent: siteConfigData.terms.marketing_consent || '',
-          refund_policy: siteConfigData.terms.refund_policy || '',
+          clientKey: siteConfigData.pg_config?.clientKey || '',
+          service_terms: siteConfigData.terms?.service_terms || '',
+          privacy_policy: siteConfigData.terms?.privacy_policy || '',
+          third_party_provision: siteConfigData.terms?.third_party_provision || '',
+          marketing_consent: siteConfigData.terms?.marketing_consent || '',
+          refund_policy: siteConfigData.terms?.refund_policy || '',
         });
       }
     } catch (error) {
@@ -405,11 +412,11 @@ export default function Admin() {
     try {
       await setDoc(doc(db, 'settings', 'site_config'), {
         id: 'site_config',
-        pg_config: { 
+        pg_config: {
           clientKey: siteConfigForm.clientKey, 
-          secretKey: siteConfigForm.secretKey, 
           pg_provider: 'toss', 
-          enabled: true 
+          enabled: true,
+          secretKey: deleteField() // Explicitly remove from Firestore
         },
         terms: {
           service_terms: siteConfigForm.service_terms,
@@ -420,6 +427,14 @@ export default function Admin() {
         },
         updated_at: serverTimestamp(),
       }, { merge: true });
+
+      await setDoc(doc(db, 'config', 'pg_config'), {
+        clientKey: siteConfigForm.clientKey,
+        pg_provider: 'toss',
+        enabled: true,
+        updated_at: serverTimestamp()
+      }, { merge: true });
+
       alert('저장되었습니다.');
     } catch (err) {
       alert('저장 실패');

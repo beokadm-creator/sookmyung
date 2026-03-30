@@ -210,64 +210,6 @@ export const verifyCode = functions.region('asia-northeast3').https.onCall(async
 
   const normalizedPhone = phone.startsWith('010') ? phone : `010${phone}`;
 
-  // TEST USER: 010-1234-1234 with code "123456"
-  const TEST_PHONE = '01012341234';
-  const TEST_CODE = '123456';
-  const TEST_PASSWORD = '888888';
-
-  if (normalizedPhone === TEST_PHONE && code === TEST_CODE) {
-    // Check if test user already exists
-    const existingUser = await getDb().collection('users').where('phone', '==', normalizedPhone).get();
-
-    if (existingUser.empty) {
-      // Create test user with dummy data
-      const hashedPassword = Buffer.from(TEST_PASSWORD).toString('base64');
-      const userRef = await getDb().collection('users').add({
-        phone: normalizedPhone,
-        name: '테스트사용자',
-        password: hashedPassword,
-        department: '컴퓨터공학과',
-        company: '테스트주식회사',
-        company_department: '개발팀',
-        position: '대리',
-        birthdate: '1995-01-01',
-        address: '서울시 용산구',
-        address_detail: '숙명여대 nearby',
-        email: 'test@smwu.ac.kr',
-        enrollment_year: '2014',
-        message: '',
-        role: 'user',
-        paymentStatus: false,
-        consent: {
-          privacy_policy: true,
-          third_party_provision: true,
-          marketing_consent: true,
-        },
-        created_at: admin.firestore.FieldValue.serverTimestamp(),
-        updated_at: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      // Create Firebase Auth user
-      try {
-        await admin.auth().createUser({
-          uid: userRef.id,
-          phoneNumber: toE164(normalizedPhone),
-          displayName: '테스트사용자',
-          email: 'test@smwu.ac.kr',
-        });
-        console.log('Test Firebase Auth user created:', userRef.id);
-      } catch (authError: any) {
-        console.error('Failed to create test Firebase Auth user:', authError);
-      }
-    }
-
-    const tempToken = Buffer.from(`${normalizedPhone}:${Date.now()}`).toString('base64');
-    return {
-      success: true,
-      tempToken,
-    };
-  }
-
   const verificationRef = getDb().collection('verifications').doc(normalizedPhone);
   const verificationDoc = await verificationRef.get();
 

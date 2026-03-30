@@ -84,23 +84,28 @@ export default function Checkout() {
         }
 
         // 3. Load PG client key
-        const configDoc = await getDoc(doc(db, 'settings', 'site_config'));
-        if (configDoc.exists()) {
-          const configData = configDoc.data() as SiteConfig;
-          const key = configData.pg_config.clientKey || '';
-          setClientKey(key);
+        let key = '';
 
-          if (!key) {
-            setError('결제 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.');
-            setLoading(false);
-            return;
-          }
-
-          setLoading(false);
+        // Check if environment variables directly supply client key (fallback)
+        if (import.meta.env.VITE_TOSS_CLIENT_KEY) {
+           key = import.meta.env.VITE_TOSS_CLIENT_KEY;
         } else {
-          setError('결제 설정을 찾을 수 없습니다.');
-          setLoading(false);
+           // Fallback to database value
+           const configDoc = await getDoc(doc(db, 'config', 'pg_config'));
+           if (configDoc.exists()) {
+             key = configDoc.data().clientKey || '';
+           }
         }
+
+        setClientKey(key);
+
+        if (!key) {
+          setError('결제 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.');
+          setLoading(false);
+          return;
+        }
+
+        setLoading(false);
       } catch (err) {
         console.error('Checkout init error:', err);
         setError('결제 페이지를 불러오는데 실패했습니다.');

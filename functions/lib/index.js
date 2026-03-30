@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserByAdmin = exports.updateUserStatus = exports.sendManualAlimtalk = exports.approveVbank = exports.applyVbank = exports.cancelPaymentByAdmin = exports.getAlimtalkTemplates = exports.initializeData = exports.saveSiteConfig = exports.getSiteConfig = exports.deleteEvent = exports.saveEvent = exports.getEvents = exports.deleteGalleryItem = exports.saveGalleryItem = exports.getGalleryItems = exports.deleteTimeline = exports.saveTimeline = exports.getTimelines = exports.processWithdrawal = exports.requestWithdrawal = exports.checkEmailDuplicate = exports.createAdmin = exports.confirmPayment = exports.onUserCreated = exports.fetchUserByPhone = exports.requestPasswordReset = exports.loginWithPhone = exports.registerWithPhone = exports.verifyCode = exports.sendVerificationCode = void 0;
+exports.deleteUserByAdmin = exports.updateUserStatus = exports.sendManualAlimtalk = exports.approveVbank = exports.applyVbank = exports.cancelPaymentByAdmin = exports.getAlimtalkTemplates = exports.initializeData = exports.saveSiteConfig = exports.getSiteConfig = exports.deleteEvent = exports.saveEvent = exports.getEvents = exports.deleteGalleryItem = exports.saveGalleryItem = exports.getGalleryItems = exports.deleteTimeline = exports.saveTimeline = exports.getTimelines = exports.processWithdrawal = exports.requestWithdrawal = exports.checkEmailDuplicate = exports.removeSecret = exports.createAdmin = exports.confirmPayment = exports.onUserCreated = exports.fetchUserByPhone = exports.requestPasswordReset = exports.loginWithPhone = exports.registerWithPhone = exports.verifyCode = exports.sendVerificationCode = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const axios_1 = __importDefault(require("axios"));
@@ -99,13 +99,9 @@ exports.confirmPayment = functions.region('asia-northeast3').https.onRequest(asy
             return;
         }
         try {
-            const siteConfigDoc = await db.collection('settings').doc('site_config').get();
-            let tossSecretKey = process.env.TOSS_SECRET_KEY;
-            if (!tossSecretKey && siteConfigDoc.exists) {
-                tossSecretKey = siteConfigDoc.data().pg_config?.secretKey;
-            }
+            const tossSecretKey = process.env.TOSS_SECRET_KEY || functions.config().toss?.secret_key;
             if (!tossSecretKey) {
-                res.status(500).json({ success: false, error: '결제 시크릿 키가 설정되지 않았습니다. 관리자에게 문의해주세요.' });
+                res.status(500).json({ success: false, error: '결제 시크릿 키가 서버에 설정되지 않았습니다. 관리자 환경 설정을 확인해주세요.' });
                 return;
             }
             console.log('Secret key loaded successfully (prefix):', tossSecretKey.substring(0, 8) + '...');
@@ -234,6 +230,9 @@ exports.confirmPayment = functions.region('asia-northeast3').https.onRequest(asy
         }
     });
 });
+const getValidAdminCode = () => {
+    return process.env.ADMIN_CODE || functions.config().admin?.code || 'SOOKMYUNG2024';
+};
 exports.createAdmin = functions.region('asia-northeast3').https.onRequest(async (req, res) => {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method not allowed' });
@@ -245,7 +244,7 @@ exports.createAdmin = functions.region('asia-northeast3').https.onRequest(async 
             res.status(400).json({ error: 'Missing required parameters' });
             return;
         }
-        if (adminCode !== 'SOOKMYUNG2024') {
+        if (adminCode !== getValidAdminCode()) {
             res.status(403).json({ error: 'Invalid admin code' });
             return;
         }
@@ -264,6 +263,18 @@ exports.createAdmin = functions.region('asia-northeast3').https.onRequest(async 
     catch (error) {
         console.error('Create admin error:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+exports.removeSecret = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
+    try {
+        const docRef = db.collection('settings').doc('site_config');
+        await docRef.update({
+            'pg_config.secretKey': admin.firestore.FieldValue.delete()
+        });
+        res.send("Secret removed!");
+    }
+    catch (e) {
+        res.send("Error: " + e.message);
     }
 });
 exports.checkEmailDuplicate = functions.region('asia-northeast3').https.onCall(async (data, context) => {
@@ -317,7 +328,8 @@ exports.requestWithdrawal = functions.region('asia-northeast3').https.onCall(asy
         const withdrawalRef = await db.collection('withdrawal_requests').add({
             user_id: userId,
             user_name: userData?.name || '',
-            user_email: userData?.email || '',
+            user_email: userData?.email || userData?.phone || '',
+            user_phone: userData?.phone || '',
             reason: reason,
             status: 'pending',
             requested_at: admin.firestore.FieldValue.serverTimestamp(),
@@ -393,18 +405,9 @@ exports.processWithdrawal = functions.region('asia-northeast3').https.onCall(asy
             throw new functions.https.HttpsError('failed-precondition', '이미 처리된 요청입니다.');
         }
         if (action === 'approve') {
-            let tossSecretKey = process.env.TOSS_SECRET_KEY;
-            try {
-                const siteConfigDoc = await db.collection('settings').doc('site_config').get();
-                if (!tossSecretKey && siteConfigDoc.exists) {
-                    tossSecretKey = siteConfigDoc.data().pg_config?.secretKey;
-                }
-            }
-            catch (configError) {
-                console.warn('Failed to load site config for Toss key:', configError);
-            }
+            const tossSecretKey = process.env.TOSS_SECRET_KEY || functions.config().toss?.secret_key;
             if (!tossSecretKey) {
-                throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 설정되지 않았습니다.');
+                throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 서버에 설정되지 않았습니다. 관리자 환경 설정을 확인해주세요.');
             }
             try {
                 console.log(`Processing withdrawal for user: ${withdrawalData?.user_id}`);

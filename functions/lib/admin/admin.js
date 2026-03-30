@@ -50,6 +50,9 @@ const corsHandler = (0, cors_1.default)({
         'https://sookmyung-97032.firebaseapp.com',
     ],
 });
+const getValidAdminCode = () => {
+    return process.env.ADMIN_CODE || functions.config().admin?.code || 'SOOKMYUNG2024';
+};
 exports.createAdmin = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method not allowed' });
@@ -61,7 +64,7 @@ exports.createAdmin = functions.region('asia-northeast1').https.onRequest(async 
             res.status(400).json({ error: 'Missing required parameters' });
             return;
         }
-        if (adminCode !== 'SOOKMYUNG2024') {
+        if (adminCode !== getValidAdminCode()) {
             res.status(403).json({ error: 'Invalid admin code' });
             return;
         }

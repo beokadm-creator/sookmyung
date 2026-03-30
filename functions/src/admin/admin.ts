@@ -13,6 +13,11 @@ const corsHandler = cors({
   ],
 });
 
+// Admin code with environment variable fallback
+const getValidAdminCode = (): string => {
+  return process.env.ADMIN_CODE || functions.config().admin?.code || 'SOOKMYUNG2024';
+};
+
 export const createAdmin = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -27,7 +32,7 @@ export const createAdmin = functions.region('asia-northeast1').https.onRequest(a
       return;
     }
 
-    if (adminCode !== 'SOOKMYUNG2024') {
+    if (adminCode !== getValidAdminCode()) {
       res.status(403).json({ error: 'Invalid admin code' });
       return;
     }

@@ -158,14 +158,24 @@ export default function Header() {
     <header className="bg-white shadow-md sticky top-0 z-50 border-b-4 border-sookmyung-blue-600">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-3">
-          <img
-            src="/emblem2.png"
-            alt="숙명여자대학교 120주년 엠블럼"
-            className="h-12 w-auto object-contain"
-          />
-          <div className="hidden lg:block">
-            <h1 className="text-[1.1rem] md:text-[1.25rem] font-bold text-sookmyung-blue-900">숙명여자대학교 총동문회</h1>
+        <Link to="/" className="flex items-center space-x-2 md:space-x-3 shrink-0">
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <img
+              src="/emblem2.png"
+              alt="엠블럼1"
+              className="h-8 md:h-10 w-auto object-contain"
+            />
+            <div className="w-[1px] h-5 md:h-6 bg-gray-200 mx-0.5" />
+            <img
+              src="/emblem3.jpg"
+              alt="엠블럼2"
+              className="h-8 md:h-10 w-auto object-contain"
+            />
+          </div>
+          <div className="block">
+            <h1 className="text-[0.75rem] sm:text-[0.9rem] md:text-[1.15rem] font-bold text-sookmyung-blue-900 tracking-tighter sm:tracking-tight leading-tight">
+              숙명여자대학교<span className="hidden sm:inline"> </span><br className="sm:hidden" />총동문회
+            </h1>
           </div>
         </Link>
 

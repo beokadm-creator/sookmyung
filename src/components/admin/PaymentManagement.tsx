@@ -148,13 +148,13 @@ const PaymentManagement: React.FC<PaymentManagementProps> = ({ payments, onCance
                       {formatAmount(p.amount)}
                     </td>
                     <td className="py-4 px-6 text-right">
-                       {p.status === 'completed' && (
+                       {(p.status === 'completed' || p.status === 'pending') && (
                          <button
                            onClick={() => onCancelPayment(p.id, p.user_id)}
                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-xl text-xs font-bold hover:bg-red-100 transition-all ml-auto opacity-100 lg:opacity-0 group-hover:opacity-100"
                          >
                            <Trash2 className="w-3 h-3" />
-                           취소 처리
+                           {(p as any).method === 'vbank' && p.status === 'pending' ? '신청 거절' : '취소 처리'}
                          </button>
                        )}
                     </td>

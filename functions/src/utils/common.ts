@@ -11,18 +11,8 @@ export async function verifyAdmin(uid: string): Promise<void> {
 }
 
 export async function getTossSecretKey(): Promise<string> {
-  let tossSecretKey = process.env.TOSS_SECRET_KEY;
-
-  if (!tossSecretKey) {
-    try {
-      const siteConfigDoc = await db.collection('settings').doc('site_config').get();
-      if (siteConfigDoc.exists) {
-        tossSecretKey = siteConfigDoc.data()?.pg_config?.secretKey;
-      }
-    } catch (configError) {
-      console.warn('Failed to load site config for Toss key:', configError);
-    }
-  }
+  // Load Toss secret key ONLY from environment variables (Cloud config)
+  const tossSecretKey = process.env.TOSS_SECRET_KEY || functions.config().toss?.secret_key;
 
   if (!tossSecretKey) {
     throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 설정되지 않았습니다. 관리자에게 문의해주세요.');

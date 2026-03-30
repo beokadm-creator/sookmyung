@@ -165,6 +165,7 @@ export interface WithdrawalRequest {
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
   requested_at: Timestamp;
+  user_phone?: string;
   processed_at?: Timestamp;
   processed_by?: string;
   reject_reason?: string;

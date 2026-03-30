@@ -19,13 +19,6 @@ export default function Directions() {
     <Layout>
       {/* Hero Section */}
       <div className="relative bg-blue-900 text-white py-12 md:py-16">
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src="https://images.unsplash.com/photo-1565514020176-db93189a744d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"
-            alt="Grand InterContinental Seoul Parnas"
-            className="w-full h-full object-cover opacity-20"
-          />
-        </div>
         <Container className="relative z-10 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">오시는 길</h1>
           <p className="text-lg md:text-xl text-blue-100 font-light leading-relaxed">

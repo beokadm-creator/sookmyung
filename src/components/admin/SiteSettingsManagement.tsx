@@ -16,7 +16,6 @@ import { cn } from '../../lib/utils';
 interface SiteSettingsManagementProps {
   formData: {
     clientKey: string;
-    secretKey: string;
     service_terms: string;
     privacy_policy: string;
     third_party_provision: string;
@@ -100,23 +99,7 @@ const SiteSettingsManagement: React.FC<SiteSettingsManagementProps> = ({ formDat
                 <p className="text-[11px] text-gray-400 px-1 font-medium italic">* 토스페이먼츠 관리자 센터에서 확인 가능한 모든 결제창 노출용 키입니다.</p>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-widest px-1 block flex items-center gap-2">
-                  <Lock className="w-3 h-3 text-red-500" />
-                  Secret Key (Backend Only)
-                </label>
-                <div className="relative group">
-                  <input
-                    type="password"
-                    value={formData.secretKey}
-                    onChange={(e) => onChange('secretKey', e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-mono text-gray-700 outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all shadow-inner tracking-widest"
-                    placeholder="••••••••••••••••••••••••••••••"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500 bg-red-50 px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter shadow-sm border border-red-100">Private</div>
-                </div>
-                <p className="text-[11px] text-gray-400 px-1 font-medium italic">* 결제 승인 요청 시 필요한 중요 보안값입니다. 외부 노출에 극도로 유의하세요.</p>
-              </div>
+
            </div>
         </div>
       ) : (

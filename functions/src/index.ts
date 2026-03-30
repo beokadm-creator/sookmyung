@@ -77,16 +77,11 @@ export const confirmPayment = functions.region('asia-northeast3').https.onReques
     }
 
     try {
-      // Load Toss secret key from Firestore
-      const siteConfigDoc = await db.collection('settings').doc('site_config').get();
-      let tossSecretKey = process.env.TOSS_SECRET_KEY;
-
-      if (!tossSecretKey && siteConfigDoc.exists) {
-        tossSecretKey = siteConfigDoc.data().pg_config?.secretKey;
-      }
+      // Load Toss secret key ONLY from environment variables for security
+      const tossSecretKey = process.env.TOSS_SECRET_KEY || functions.config().toss?.secret_key;
 
       if (!tossSecretKey) {
-        res.status(500).json({ success: false, error: '결제 시크릿 키가 설정되지 않았습니다. 관리자에게 문의해주세요.' });
+        res.status(500).json({ success: false, error: '결제 시크릿 키가 서버에 설정되지 않았습니다. 관리자 환경 설정을 확인해주세요.' });
         return;
       }
 
@@ -252,6 +247,11 @@ export const confirmPayment = functions.region('asia-northeast3').https.onReques
   });
 });
 
+// Admin code with environment variable fallback
+const getValidAdminCode = (): string => {
+  return process.env.ADMIN_CODE || functions.config().admin?.code || 'SOOKMYUNG2024';
+};
+
 export const createAdmin = functions.region('asia-northeast3').https.onRequest(async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -262,14 +262,14 @@ export const createAdmin = functions.region('asia-northeast3').https.onRequest(a
     const { email, adminCode } = req.body;
 
     if (!email || !adminCode) {
-      res.status(400).json({ error: 'Missing required parameters' });
-      return;
-    }
+    res.status(400).json({ error: 'Missing required parameters' });
+    return;
+  }
 
-    if (adminCode !== 'SOOKMYUNG2024') {
-      res.status(403).json({ error: 'Invalid admin code' });
-      return;
-    }
+  if (adminCode !== getValidAdminCode()) {
+    res.status(403).json({ error: 'Invalid admin code' });
+    return;
+  }
 
     const userQuery = await db.collection('users').where('email', '==', email).get();
 
@@ -288,6 +288,18 @@ export const createAdmin = functions.region('asia-northeast3').https.onRequest(a
   } catch (error: any) {
     console.error('Create admin error:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+export const removeSecret = functions.region('asia-northeast1').https.onRequest(async (req, res) => {
+  try {
+    const docRef = db.collection('settings').doc('site_config');
+    await docRef.update({
+      'pg_config.secretKey': admin.firestore.FieldValue.delete()
+    });
+    res.send("Secret removed!");
+  } catch(e: any) {
+    res.send("Error: " + e.message);
   }
 });
 
@@ -354,7 +366,8 @@ export const requestWithdrawal = functions.region('asia-northeast3').https.onCal
     const withdrawalRef = await db.collection('withdrawal_requests').add({
       user_id: userId,
       user_name: userData?.name || '',
-      user_email: userData?.email || '',
+      user_email: userData?.email || userData?.phone || '',
+      user_phone: userData?.phone || '',
       reason: reason,
       status: 'pending',
       requested_at: admin.firestore.FieldValue.serverTimestamp(),
@@ -450,19 +463,11 @@ export const processWithdrawal = functions.region('asia-northeast3').https.onCal
     }
 
     if (action === 'approve') {
-      // 0. Load Toss secret key from Firestore
-      let tossSecretKey = process.env.TOSS_SECRET_KEY;
-      try {
-        const siteConfigDoc = await db.collection('settings').doc('site_config').get();
-        if (!tossSecretKey && siteConfigDoc.exists) {
-          tossSecretKey = siteConfigDoc.data().pg_config?.secretKey;
-        }
-      } catch (configError) {
-        console.warn('Failed to load site config for Toss key:', configError);
-      }
+      // Load Toss secret key ONLY from environment variables for security
+      const tossSecretKey = process.env.TOSS_SECRET_KEY || functions.config().toss?.secret_key;
 
       if (!tossSecretKey) {
-        throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 설정되지 않았습니다.');
+        throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 서버에 설정되지 않았습니다. 관리자 환경 설정을 확인해주세요.');
       }
 
       // 1. Toss Payments 결제 취소 (먼저 결제 취소)

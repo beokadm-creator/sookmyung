@@ -60,7 +60,29 @@ const WithdrawalManagement: React.FC<WithdrawalManagementProps> = ({ requests, o
                   <span className="text-xs text-gray-400 font-medium">{formatDate(request.requested_at)}</span>
                 </div>
                 <h4 className="font-bold text-gray-900 text-lg mb-1">{request.user_name}</h4>
-                <p className="text-sm text-gray-500 mb-3">{request.user_email}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
+                  <p className="text-sm text-gray-500 font-medium">연락처: {request.user_phone || '-'}</p>
+                  <p className="text-sm text-gray-400">|</p>
+                  <p className="text-sm text-gray-500">{request.user_email || '-'}</p>
+                </div>
+                
+                {/* Payment Method Badge */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className={cn(
+                    "px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm",
+                    (request as any).payment_method === 'card' 
+                      ? "bg-blue-50 text-blue-700 border border-blue-100" 
+                      : (request as any).payment_method === 'transfer'
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                        : "bg-amber-50 text-amber-700 border border-amber-100"
+                  )}>
+                    결제수단: {
+                      (request as any).payment_method === 'card' ? '신용카드' : 
+                      (request as any).payment_method === 'transfer' ? '계좌이체' : 
+                      (request as any).payment_method === 'vbank' ? '무통장입금' : '정보 없음'
+                    }
+                  </span>
+                </div>
                 <div className="bg-gray-50 p-4 rounded-2xl italic text-gray-600 text-sm border-l-4 border-gray-200">
                    "{request.reason}"
                 </div>
