@@ -69,7 +69,7 @@ export default function Header() {
 
   // Desktop navigation
   const DesktopNav = (
-    <div className="hidden lg:flex items-center gap-4 xl:gap-8 ml-6">
+    <div className="hidden lg:flex items-center gap-4 xl:gap-8">
       {navItems.map((item) => (
         <NavLink key={item.path} item={item} />
       ))}
@@ -157,7 +157,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3 flex items-center">
         {/* Logo and Nav group */}
         <div className="flex items-center shrink-0">
-          <Link to="/" className="flex items-center mr-6 xl:mr-10">
+          <Link to="/" className="flex items-center mr-2 xl:mr-4">
             <img
               src="/emblem2.png"
               alt="숙명여자대학교 120주년 엠블럼"

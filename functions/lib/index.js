@@ -111,27 +111,26 @@ exports.confirmPayment = functions.region('asia-northeast3').https.onRequest(asy
                 return;
             }
             const requestedAmount = Number(amount);
+            const kstDate = new Date(Date.now() + (9 * 60 * 60 * 1000));
+            const today = kstDate.toISOString().split('T')[0];
             console.log('=== Payment Verification Debug ===');
             console.log('Requested amount:', requestedAmount);
-            console.log('Today:', new Date().toISOString().split('T')[0]);
+            console.log('Today (KST):', today);
             const eventConfigDoc = await db.collection('config').doc('event_settings').get();
             let expectedAmount = null;
             if (eventConfigDoc.exists) {
                 const eventData = eventConfigDoc.data();
-                console.log('Event config data:', JSON.stringify(eventData, null, 2));
+                console.log('Event config data found');
                 if (eventData?.priceTiers && Array.isArray(eventData.priceTiers)) {
-                    const today = new Date().toISOString().split('T')[0];
-                    console.log('Price tiers:', JSON.stringify(eventData.priceTiers, null, 2));
                     const activeTier = eventData.priceTiers.find((tier) => tier.active && today >= tier.startDate && today <= tier.endDate);
-                    console.log('Active tier:', activeTier ? JSON.stringify(activeTier, null, 2) : 'None found');
                     if (activeTier) {
                         expectedAmount = activeTier.amount;
+                        console.log('Active tier found:', activeTier.label, expectedAmount);
                     }
                 }
             }
-            console.log('Expected amount:', expectedAmount);
             if (expectedAmount === null) {
-                console.log('ERROR: No active price tier found');
+                console.warn('ERROR: No active price tier found for Date:', today);
                 res.status(400).json({
                     success: false,
                     error: '현재 설정된 기간별 등록비가 없습니다. 관리자에게 문의해주세요.'
@@ -139,7 +138,7 @@ exports.confirmPayment = functions.region('asia-northeast3').https.onRequest(asy
                 return;
             }
             if (requestedAmount !== expectedAmount) {
-                console.log(`ERROR: Amount mismatch. Expected: ${expectedAmount}, Received: ${requestedAmount}`);
+                console.warn(`ERROR: Amount mismatch. Expected: ${expectedAmount}, Received: ${requestedAmount}`);
                 res.status(400).json({
                     success: false,
                     error: `결제 금액이 올바르지 않습니다. 예상 금액: ${expectedAmount.toLocaleString()}원, 요청 금액: ${requestedAmount.toLocaleString()}원`
@@ -165,7 +164,7 @@ exports.confirmPayment = functions.region('asia-northeast3').https.onRequest(asy
             const response = await axios_1.default.post('https://api.tosspayments.com/v1/payments/confirm', {
                 paymentKey,
                 orderId,
-                amount,
+                amount: requestedAmount,
             }, {
                 headers: {
                     Authorization: `Basic ${Buffer.from(`${tossSecretKey}:`).toString('base64')}`,
