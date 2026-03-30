@@ -154,7 +154,7 @@ export default function Header() {
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50 border-b-4 border-sookmyung-blue-600">
-      <div className="container mx-auto px-4 py-3 flex items-center">
+      <div className="container mx-auto px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
           <img
@@ -165,38 +165,43 @@ export default function Header() {
         </Link>
 
         {/* Desktop nav */}
-        {DesktopNav}
-
-        {/* CTA Button on the right */}
-        <div className="ml-auto hidden lg:flex items-center gap-4">
-          {user ? (
-            <>
-              <Link to="/mypage"><Button variant="primary">마이페이지</Button></Link>
-              <button
-                onClick={handleLogout}
-                type="button"
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                로그아웃
-              </button>
-            </>
-          ) : (
-            <Link to="/application">
-              <Button variant="primary" aria-label="참가신청">참가신청</Button>
-            </Link>
-          )}
+        <div className="flex items-center">
+          {DesktopNav}
         </div>
 
-        {/* Mobile hamburger */}
-        <div className="ml-auto lg:hidden flex items-center">
-          <button
-            type="button"
-            aria-label="Open menu"
-            onClick={() => setMobileOpen(true)}
-            className="p-2 rounded hover:bg-sookmyung-blue-50 text-sookmyung-blue-600"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+        {/* Right side: CTA Buttons (Desktop) or Hamburger (Mobile) */}
+        <div className="flex items-center justify-end gap-4">
+          {/* CTA Buttons - Hidden on Mobile */}
+          <div className="hidden lg:flex items-center gap-4">
+            {user ? (
+              <>
+                <Link to="/mypage"><Button variant="primary">마이페이지</Button></Link>
+                <button
+                  onClick={handleLogout}
+                  type="button"
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <Link to="/application">
+                <Button variant="primary" aria-label="참가신청">참가신청</Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile hamburger - Hidden on Desktop */}
+          <div className="lg:hidden flex items-center">
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setMobileOpen(true)}
+              className="p-2 rounded hover:bg-sookmyung-blue-50 text-sookmyung-blue-600"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </div>
 
