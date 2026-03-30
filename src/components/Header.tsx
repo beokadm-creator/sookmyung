@@ -69,7 +69,7 @@ export default function Header() {
 
   // Desktop navigation
   const DesktopNav = (
-    <div className="hidden lg:flex items-center gap-4 xl:gap-8 ml-8">
+    <div className="hidden lg:flex items-center gap-4 xl:gap-8 ml-6">
       {navItems.map((item) => (
         <NavLink key={item.path} item={item} />
       ))}
@@ -154,9 +154,9 @@ export default function Header() {
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50 border-b-4 border-sookmyung-blue-600">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="container mx-auto px-4 py-3 flex items-center">
         {/* Logo */}
-        <Link to="/" className="flex items-center shrink-0 pr-4 md:pr-8">
+        <Link to="/" className="flex items-center shrink-0">
           <img
             src="/emblem2.png"
             alt="숙명여자대학교 120주년 엠블럼"
@@ -168,7 +168,7 @@ export default function Header() {
         {DesktopNav}
 
         {/* CTA Button on the right */}
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="ml-auto hidden lg:flex items-center gap-4">
           {user ? (
             <>
               <Link to="/mypage"><Button variant="primary">마이페이지</Button></Link>
@@ -188,7 +188,7 @@ export default function Header() {
         </div>
 
         {/* Mobile hamburger */}
-        <div className="lg:hidden flex items-center">
+        <div className="ml-auto lg:hidden flex items-center">
           <button
             type="button"
             aria-label="Open menu"
