@@ -5,7 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 import Layout from '../components/Layout';
 import { RegisterFormData, SiteConfig, UserConsent } from '../types';
-import { X, Phone, Lock, User, CheckCircle, AlertCircle, Calendar, MapPin, Mail, School, MessageSquare, CreditCard } from 'lucide-react';
+import { X, Phone, Lock, User, CheckCircle, AlertCircle, Calendar, MapPin, Mail, School, MessageSquare, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
 import DaumPostcodeEmbed from 'react-daum-postcode';
 import { useRateLimit } from '../hooks/useRateLimit';
 
@@ -83,6 +83,9 @@ export default function Application() {
   // Policy Modal
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [activePolicyTab, setActivePolicyTab] = useState<'privacy' | 'third_party' | 'marketing'>('privacy');
+  
+  // Refund Policy toggle
+  const [showRefundPolicy, setShowRefundPolicy] = useState(false);
 
   // Payment states
   const [amount, setAmount] = useState(0);
@@ -534,6 +537,32 @@ export default function Application() {
                     </div>
                   </div>
                 )}
+                <div className="mt-8 border-t pt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowRefundPolicy(!showRefundPolicy)}
+                    className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors group"
+                  >
+                    <span className="flex items-center gap-2 font-bold text-gray-700">
+                      <AlertCircle className="w-5 h-5 text-blue-600" />
+                      환불 정책 안내 (필독)
+                    </span>
+                    {showRefundPolicy ? (
+                      <ChevronUp className="w-5 h-5 text-gray-500 group-hover:text-blue-600" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-500 group-hover:text-blue-600" />
+                    )}
+                  </button>
+                  
+                  {showRefundPolicy && (
+                    <div className="mt-2 p-6 bg-white border border-gray-200 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {siteConfig?.terms?.refund_policy || '등록된 환불 정책이 없습니다.'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <p className="text-center text-xs md:text-sm text-gray-500 mt-4">위 버튼을 누르면 결제 창이 호출됩니다. 신청 완료 메시지가 나오기 전까지 창을 닫지 마세요.</p>
               </div>
             </form>
