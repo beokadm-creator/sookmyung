@@ -92,8 +92,13 @@ export default function Checkout() {
         } else {
            // Fallback to database value
            const configDoc = await getDoc(doc(db, 'config', 'pg_config'));
-           if (configDoc.exists()) {
-             key = configDoc.data().clientKey || '';
+           if (configDoc.exists() && configDoc.data().clientKey) {
+             key = configDoc.data().clientKey;
+           } else {
+             const siteConfigDoc = await getDoc(doc(db, 'settings', 'site_config'));
+             if (siteConfigDoc.exists() && siteConfigDoc.data().pg_config?.clientKey) {
+               key = siteConfigDoc.data().pg_config.clientKey;
+             }
            }
         }
 

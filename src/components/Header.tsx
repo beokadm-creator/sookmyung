@@ -57,7 +57,7 @@ export default function Header() {
     >
       <Link
         to={item.path}
-        className={`px-4 py-2 rounded-lg transition-colors font-medium ${isActive(item.path)
+        className={`px-2 lg:px-3 py-2 rounded-lg transition-colors font-medium whitespace-nowrap text-sm lg:text-base ${isActive(item.path)
           ? 'bg-sookmyung-blue-600 text-white'
           : 'text-gray-700 hover:bg-sookmyung-blue-50 hover:text-sookmyung-blue-600'
           }`}
@@ -69,7 +69,7 @@ export default function Header() {
 
   // Desktop navigation
   const DesktopNav = (
-    <div className="hidden lg:flex items-center gap-4 xl:gap-8">
+    <div className="hidden xl:flex items-center gap-1 xl:gap-4">
       {navItems.map((item) => (
         <NavLink key={item.path} item={item} />
       ))}
@@ -78,7 +78,7 @@ export default function Header() {
 
   // Mobile drawer
   const MobileDrawer = (
-    <div className={`lg:hidden fixed inset-0 z-50 transform ${mobileOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300`}>
+    <div className={`xl:hidden fixed inset-0 z-50 transform ${mobileOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300`}>
       <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
       <div className="absolute right-0 top-0 h-full w-80 bg-white flex flex-col shadow-xl">
         <div className="flex items-center justify-between px-4 py-4 border-b bg-sookmyung-blue-600">
@@ -154,10 +154,10 @@ export default function Header() {
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50 border-b-4 border-sookmyung-blue-600">
-      <div className="container mx-auto px-4 py-3 flex items-center">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo and Nav group */}
-        <div className="flex items-center shrink-0">
-          <Link to="/" className="flex items-center mr-2 xl:mr-4">
+        <div className="flex items-center">
+          <Link to="/" className="flex items-center shrink-0 mr-2 xl:mr-4">
             <img
               src="/emblem2.png"
               alt="숙명여자대학교 120주년 엠블럼"
@@ -166,18 +166,15 @@ export default function Header() {
           </Link>
 
           {/* Desktop nav - directly next to logo */}
-          <div className="hidden lg:flex items-center whitespace-nowrap">
+          <div className="hidden xl:flex items-center whitespace-nowrap">
             {DesktopNav}
           </div>
         </div>
 
-        {/* Elastic spacer to push CTA to the right */}
-        <div className="flex-grow" />
-
         {/* Right side: CTA Buttons (Desktop) or Hamburger (Mobile) */}
-        <div className="flex items-center shrink-0 gap-4">
+        <div className="flex items-center shrink-0 gap-2 xl:gap-4">
           {/* CTA Buttons - Hidden on Mobile */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden xl:flex items-center gap-2 xl:gap-3">
             {user ? (
               <>
                 <Link to="/mypage" className="shrink-0">
@@ -186,7 +183,7 @@ export default function Header() {
                 <button
                   onClick={handleLogout}
                   type="button"
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg whitespace-nowrap"
+                  className="px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg whitespace-nowrap"
                 >
                   로그아웃
                 </button>
@@ -199,7 +196,7 @@ export default function Header() {
           </div>
 
           {/* Mobile hamburger - Hidden on Desktop */}
-          <div className="lg:hidden flex items-center">
+          <div className="xl:hidden flex items-center">
             <button
               type="button"
               aria-label="Open menu"
@@ -219,3 +216,4 @@ export default function Header() {
     </header>
   )
 }
+

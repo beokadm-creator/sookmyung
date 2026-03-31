@@ -187,7 +187,6 @@ export default function Application() {
     if (formData.password.length !== 6) return '비밀번호 6자리를 입력해주세요.';
     if (!formData.name.trim()) return '성명을 입력해주세요.';
     if (!formData.birthdate.trim()) return '생년월일을 입력해주세요.';
-    if (!formData.address.trim()) return '주소를 입력해주세요.';
     if (!formData.department.trim()) return '학과명을 입력해주세요.';
     if (!formData.enrollment_year.trim()) return '입학년도를 입력해주세요.';
     
@@ -207,7 +206,6 @@ export default function Application() {
     if (!formData.password || formData.password.length !== 6) missing.push("비밀번호 숫자 6자리");
     if (!formData.name.trim()) missing.push("성명");
     if (!formData.birthdate.trim() || formData.birthdate.length !== 8) missing.push("생년월일 8자리(YYYYMMDD)");
-    if (!formData.address.trim()) missing.push("주소");
     if (!formData.department.trim()) missing.push("학과명");
     if (!formData.enrollment_year.trim() || formData.enrollment_year.length !== 4) missing.push("입학년도 4자리");
     if (!consent.privacy_policy) missing.push("개인정보 수집 동의");
@@ -393,7 +391,7 @@ export default function Application() {
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-base font-medium text-gray-700 mb-2">주소 <span className="text-red-500">*</span></label>
+                    <label className="block text-base font-medium text-gray-700 mb-2">주소 <span className="text-gray-400 text-xs">(선택사항)</span></label>
                     <div className="flex gap-2 mb-2">
                       <div className="relative flex-1">
                         <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
