@@ -157,6 +157,7 @@ export default function Checkout() {
         orderName: '숙명 120주년 전야제 참가신청',
         successUrl: `${window.location.origin}/success?userId=${userId}&amount=${amount}`,
         failUrl: `${window.location.origin}/application?message=payment_failed`,
+        taxFreeAmount: Number(amount), // 부가가치세 제외 (전액 면세 처리)
       };
 
       if (method === 'transfer') {
@@ -364,9 +365,9 @@ export default function Checkout() {
               
               <div className="space-y-4 mb-8">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-blue-900 font-bold mb-2">전야제 신청이 접수되었습니다.</p>
+                  <p className="text-blue-900 font-bold mb-2">무통장입금 신청 안내</p>
                   <p className="text-sm text-blue-800 leading-relaxed">
-                    아래 계좌로 금액 입금 시 확인 후 최종 승인처리됩니다.
+                    확인 버튼을 누르면 신청이 접수되며, 아래 계좌로 금액 입금 시 확인 후 최종 승인처리됩니다.
                     <br /><br />
                     <strong>은행:</strong> 국민은행<br />
                     <strong>계좌번호:</strong> 763601-04-178355<br />
@@ -393,7 +394,7 @@ export default function Checkout() {
                   disabled={processing}
                   className="flex-1 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-bold disabled:bg-gray-400"
                 >
-                  {processing ? '신청 중...' : '확인(신청 완료)'}
+                  {processing ? '신청 중...' : '확인 (정상 처리)'}
                 </button>
               </div>
             </div>
@@ -451,7 +452,6 @@ export default function Checkout() {
         )}
 
         <div className="text-center space-y-2 mt-4">
-          <p className="text-red-500 text-sm font-medium">※ 하나카드는 결제가 불가합니다.</p>
           <p className="text-gray-500 text-sm">위 버튼을 누르면 결제 창이 호출됩니다. (Toss Payments)</p>
         </div>
       </div>
