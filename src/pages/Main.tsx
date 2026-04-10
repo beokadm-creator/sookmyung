@@ -31,8 +31,9 @@ export default function Main() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500">창학 120주년</span> 기념 전야제
             </h1>
             <p className="text-lg md:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed font-light">
-              자랑스러운 숙명의 역사, 빛나는 미래로 이어질<br className="hidden md:block"/>
-              뜻깊은 순간에 동문 여러분을 초대합니다.
+              자랑스러운 숙명의 역사, 빛나는 미래로 이어질{' '}
+              <br className="hidden md:block"/>
+              뜻 깊은 순간에 동문 여러분을 초대합니다.
             </p>
           </div>
 

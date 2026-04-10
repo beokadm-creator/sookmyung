@@ -27,7 +27,7 @@ function NoticeBox() {
               <span className="font-bold text-gray-900 shrink-0">참가비:</span>
               <div className="space-y-0.5">
                 <p className="font-medium text-gray-800">
-                  <span className="text-blue-600 font-bold">일반예약</span> 28만원 / <span className="text-blue-600 font-bold">조기예약</span>(4/14까지) 25만원
+                  <span className="text-blue-600 font-bold">일반예약</span> 28만원 / <span className="text-blue-600 font-bold">조기예약</span>(4/30까지) 25만원
                 </p>
                 <p className="font-medium text-gray-800">
                   One Table(10좌석) 250만원(전기간 동일 적용)
@@ -190,7 +190,7 @@ export default function Application() {
     if (formData.password.length !== 6) return '비밀번호 6자리를 입력해주세요.';
     if (!formData.name.trim()) return '성명을 입력해주세요.';
     if (!formData.birthdate.trim()) return '생년월일을 입력해주세요.';
-    if (!formData.department.trim()) return '학과명을 입력해주세요.';
+    if (!formData.department.trim()) return '소속(학과)를 입력해주세요.';
     if (!formData.enrollment_year.trim()) return '입학년도를 입력해주세요.';
     
     if (!consent.privacy_policy) return '개인정보 수집 및 이용 동의가 필요합니다.';
@@ -209,8 +209,8 @@ export default function Application() {
     if (!formData.password || formData.password.length !== 6) missing.push("비밀번호 숫자 6자리");
     if (!formData.name.trim()) missing.push("성명");
     if (!formData.birthdate.trim() || formData.birthdate.length !== 8) missing.push("생년월일 8자리(YYYYMMDD)");
-    if (!formData.department.trim()) missing.push("학과명");
-    if (!formData.enrollment_year.trim() || formData.enrollment_year.length !== 4) missing.push("입학년도 4자리");
+    if (!formData.department.trim()) missing.push("소속(학과)");
+    if (!formData.enrollment_year.trim()) missing.push("입학년도");
     if (!consent.privacy_policy) missing.push("개인정보 수집 동의");
     if (!consent.third_party_provision) missing.push("제3자 제공 동의");
     if (formData.additional_program_domestic_tour && !formData.additional_program_domestic_tour_option) {
@@ -405,18 +405,24 @@ export default function Application() {
                     <input type="text" name="address_detail" value={formData.address_detail} onChange={handleChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="상세 주소를 입력해주세요" />
                   </div>
                   <div>
-                    <label className="block text-base font-medium text-gray-700 mb-2">학과명 <span className="text-red-500">*</span></label>
+                    <label className="block text-base font-medium text-gray-700 mb-2">
+                      소속(학과) <span className="text-red-500">*</span>
+                    </label>
                     <div className="relative">
                       <School className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input type="text" name="department" value={formData.department} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="예: 컴퓨터과학전공" />
                     </div>
+                    <p className="mt-1 text-[11px] md:text-[13px] text-gray-500">※ 동문이 아닌 경우 OOO지인, 교수, 교직원 등 기재</p>
                   </div>
                   <div>
-                    <label className="block text-base font-medium text-gray-700 mb-2">입학년도 <span className="text-red-500">*</span></label>
+                    <label className="block text-base font-medium text-gray-700 mb-2">
+                      입학년도 <span className="text-red-500">*</span>
+                    </label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input type="text" name="enrollment_year" value={formData.enrollment_year} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="예: 2020" maxLength={4} />
+                      <input type="text" name="enrollment_year" value={formData.enrollment_year} onChange={handleChange} className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="예: 2020 또는 기타" />
                     </div>
+                    <p className="mt-1 text-[11px] md:text-[13px] text-gray-500">※ 동문이 아닌 경우 '기타'로 기재</p>
                   </div>
                   <div className="md:col-span-2 space-y-4 pt-4 border-t border-gray-100">
                     <div>
@@ -514,7 +520,12 @@ export default function Application() {
                 </div>
               </section>
 
-              <div className="pt-6">
+                <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs md:text-sm text-blue-800 leading-snug shadow-sm">
+                  <p className="font-bold flex items-center gap-1 mb-0.5">📢 얼리버드 기간 연장 안내</p>
+                  <p>조기예약 연장에 대한 요청과 문의가 많아 기간을 4/30까지 연장합니다. 원활한 행사를 위한 결정이오니 서둘러 신청해 주신 분들의 너른 양해 부탁드립니다.</p>
+                </div>
+
+                <div className="pt-2">
                 <button 
                   type="submit" 
                   disabled={loading} 
