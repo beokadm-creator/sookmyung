@@ -520,12 +520,14 @@ export default function Application() {
                 </div>
               </section>
 
-                <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs md:text-sm text-blue-800 leading-snug shadow-sm">
-                  <p className="font-bold flex items-center gap-1 mb-0.5">📢 얼리버드 기간 연장 안내</p>
-                  <p>조기예약 연장에 대한 요청과 문의가 많아 기간을 4/30까지 연장합니다. 원활한 행사를 위한 결정이오니 서둘러 신청해 주신 분들의 너른 양해 부탁드립니다.</p>
-                </div>
+              <div className="mb-4 p-4 md:p-5 bg-blue-50 border border-blue-200 rounded-xl text-xs md:text-sm text-blue-800 leading-relaxed shadow-sm">
+                <p>
+                  조기예약 연장에 대한 요청과 문의가 많아, 얼리버드 기간을 4월 말(4/30)까지 연장하고자 합니다.<br />
+                  보다 많은 분들께 참여 기회를 드리고, 행사의 원할한 운영을 위한 결정인 만큼, 서둘러 참가 신청해 주신 분들의 너른 양해를 부탁드립니다.
+                </p>
+              </div>
 
-                <div className="pt-2">
+              <div className="pt-2">
                 <button 
                   type="submit" 
                   disabled={loading} 
