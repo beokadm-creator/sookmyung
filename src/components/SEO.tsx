@@ -15,7 +15,7 @@ const DEFAULT_IMAGE = '/og-image.jpg';
 const DEFAULT_CANONICAL_BASE = 'https://120th.sookmyung.ac.kr';
 
 export const SEO: React.FC<SEOProps> = ({
-  title,
+  title, // eslint-disable-line
   description,
   image,
   url,
@@ -61,6 +61,7 @@ export const SEO: React.FC<SEOProps> = ({
     updateMeta('twitter:title', fullTitle);
     updateMeta('twitter:description', fullDescription);
     updateMeta('twitter:image', imageUrl);
+    updateMeta('google', 'notranslate');
 
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
     if (!link) {
