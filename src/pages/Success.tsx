@@ -266,6 +266,34 @@ export default function Success() {
     );
   }
 
+  if (errorMsg) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-md mx-auto text-center">
+            <div className="w-20 h-20 bg-red-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+              <span className="text-5xl">⚠️</span>
+            </div>
+            <h1 className="text-2xl font-bold mb-4 text-red-700">결제 처리 오류</h1>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-700 text-sm">{errorMsg}</p>
+            </div>
+            <p className="text-gray-500 text-sm mb-6">
+              결제 금액이 청구되었다면 관리자에게 문의해 주세요.<br />
+              문의전화: 02-6959-3871~3
+            </p>
+            <button
+              onClick={() => navigate('/application')}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700"
+            >
+              신청 페이지로 돌아가기
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12">

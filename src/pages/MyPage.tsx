@@ -220,13 +220,10 @@ export default function MyPage() {
                        결제하기
                      </Button>
                    )}
-                  <Button
-                    variant="outline"
-                    fullWidth
-                    onClick={() => setShowWithdrawalModal(true)}
-                  >
-                    참가 취소
-                  </Button>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center text-sm text-gray-600">
+                    <p className="mb-1">취소 문의는 총동문회로 연락 바랍니다.</p>
+                    <a href="tel:027121212" className="font-bold text-gray-800 hover:text-sookmyung-blue-600 transition-colors">02-712-1212</a>
+                  </div>
                   <Button
                     variant="ghost"
                     fullWidth

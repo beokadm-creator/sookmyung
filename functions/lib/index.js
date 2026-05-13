@@ -130,12 +130,9 @@ exports.confirmPayment = functions.region('asia-northeast3').https.onRequest(asy
                 }
             }
             if (expectedAmount === null) {
-                console.warn('ERROR: No active price tier found for Date:', today);
-                res.status(400).json({
-                    success: false,
-                    error: '현재 설정된 기간별 등록비가 없습니다. 관리자에게 문의해주세요.'
-                });
-                return;
+                const defaultAmount = eventConfigDoc.exists ? (eventConfigDoc.data()?.defaultAmount ?? 280000) : 280000;
+                expectedAmount = defaultAmount;
+                console.warn(`No active price tier found for Date: ${today}. Using admin defaultAmount: ${expectedAmount}`);
             }
             if (requestedAmount !== expectedAmount) {
                 console.warn(`ERROR: Amount mismatch. Expected: ${expectedAmount}, Received: ${requestedAmount}`);
@@ -177,36 +174,46 @@ exports.confirmPayment = functions.region('asia-northeast3').https.onRequest(asy
                 if (!userId && paymentData.customerKey && paymentData.customerKey.startsWith('user_')) {
                     userId = paymentData.customerKey.replace('user_', '');
                 }
-                await db.runTransaction(async (transaction) => {
-                    if (userId) {
-                        const userRef = db.collection('users').doc(userId);
-                        transaction.update(userRef, {
-                            paymentStatus: true,
-                            updated_at: admin.firestore.FieldValue.serverTimestamp(),
-                        });
+                let fetchedUserData = null;
+                if (userId) {
+                    try {
+                        const userSnap = await db.collection('users').doc(userId).get();
+                        fetchedUserData = userSnap.data() || null;
                     }
-                    const paymentRef = db.collection('payments').doc();
-                    transaction.set(paymentRef, {
-                        user_id: userId || 'anonymous',
-                        payment_key: paymentKey,
-                        order_id: orderId,
-                        amount: requestedAmount,
-                        status: 'completed',
-                        payment_type: 'membership',
-                        created_at: admin.firestore.FieldValue.serverTimestamp(),
-                        updated_at: admin.firestore.FieldValue.serverTimestamp(),
-                        approvedAt: admin.firestore.FieldValue.serverTimestamp(),
-                        payment_data: paymentData
-                    });
+                    catch (e) {
+                        console.warn('Failed to fetch user data for payment record:', e);
+                    }
+                }
+                const paymentRef = db.collection('payments').doc();
+                await paymentRef.set({
+                    user_id: userId || 'anonymous',
+                    user_name: fetchedUserData?.name || '',
+                    payment_key: paymentKey,
+                    order_id: orderId,
+                    amount: requestedAmount,
+                    status: 'completed',
+                    payment_type: 'membership',
+                    created_at: admin.firestore.FieldValue.serverTimestamp(),
+                    updated_at: admin.firestore.FieldValue.serverTimestamp(),
+                    approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    payment_data: paymentData
                 });
                 if (userId) {
                     try {
-                        const userDoc = await db.collection('users').doc(userId).get();
-                        const userData = userDoc.data();
-                        if (userData && userData.phone && userData.name) {
-                            const alimtalkService = await getAlimtalkService();
-                            await alimtalkService.sendWelcomeMessage(userData.phone, userData.name, requestedAmount, orderId);
-                        }
+                        const userRef = db.collection('users').doc(userId);
+                        await userRef.set({
+                            paymentStatus: true,
+                            updated_at: admin.firestore.FieldValue.serverTimestamp(),
+                        }, { merge: true });
+                    }
+                    catch (userUpdateError) {
+                        console.error(`Failed to update paymentStatus for user ${userId}:`, userUpdateError);
+                    }
+                }
+                if (fetchedUserData && fetchedUserData.phone && fetchedUserData.name) {
+                    try {
+                        const alimtalkService = await getAlimtalkService();
+                        await alimtalkService.sendWelcomeMessage(fetchedUserData.phone, fetchedUserData.name, requestedAmount, orderId);
                     }
                     catch (alimtalkError) {
                         console.error('Failed to send registration complete Alimtalk:', alimtalkError);
@@ -946,16 +953,7 @@ exports.cancelPaymentByAdmin = functions.region('asia-northeast3').https.onCall(
             throw new functions.https.HttpsError('failed-precondition', '취소할 수 없는 결제 상태입니다.');
         }
         const paymentKey = paymentData.payment_key;
-        let tossSecretKey = process.env.TOSS_SECRET_KEY;
-        try {
-            const siteConfigDoc = await db.collection('settings').doc('site_config').get();
-            if (!tossSecretKey && siteConfigDoc.exists) {
-                tossSecretKey = siteConfigDoc.data().pg_config?.secretKey;
-            }
-        }
-        catch (configError) {
-            console.warn('Failed to load site config for Toss key:', configError);
-        }
+        const tossSecretKey = process.env.TOSS_SECRET_KEY || functions.config().toss?.secret_key;
         if (!tossSecretKey) {
             throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 설정되지 않았습니다.');
         }

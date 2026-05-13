@@ -49,6 +49,7 @@ export interface Config {
   updated_at: Timestamp;
   registrationFee?: number;
   priceTiers?: PriceTier[];
+  defaultAmount?: number; // 활성 구간이 없을 때 사용할 기본 참가비
 }
 
 export interface PriceTier {

@@ -6,7 +6,15 @@
       "Bash(npm run:*)",
       "Bash(firebase deploy:*)",
       "Bash(node:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(firebase functions:log --only confirmPayment)",
+      "Bash(firebase functions:log --only applyVbank)",
+      "Bash(firebase functions:log --only confirmPayment --limit 50)",
+      "Bash(firebase functions:log --only confirmPayment --limit 200)",
+      "Bash(firebase firestore:rules:get)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

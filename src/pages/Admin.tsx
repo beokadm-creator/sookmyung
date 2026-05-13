@@ -68,6 +68,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
+  const [defaultAmount, setDefaultAmount] = useState<number>(280000);
   
   // Modals Visibility
   const [showNoticeModal, setShowNoticeModal] = useState(false);
@@ -181,24 +182,28 @@ export default function Admin() {
       } as Notice));
       setNotices(noticesData);
 
-      const withdrawalsQuery = query(
-        collection(db, 'withdrawal_requests'),
-        orderBy('requested_at', 'desc')
-      );
-      const withdrawalsSnapshot = await getDocs(withdrawalsQuery);
-      const withdrawalsData = withdrawalsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        const user = usersData.find(u => u.id === data.user_id);
-        return {
-          id: doc.id,
-          ...data,
-          user_name: data.user_name || user?.name || '성명 없음',
-          user_email: data.user_email || user?.phone || '정보 없음',
-          user_phone: (data as any).user_phone || user?.phone || '',
-          payment_method: user?.paymentMethod || '정보 없음'
-        } as WithdrawalRequest & { payment_method?: string };
-      });
-      setWithdrawalRequests(withdrawalsData);
+      try {
+        const withdrawalsQuery = query(
+          collection(db, 'withdrawal_requests'),
+          orderBy('requested_at', 'desc')
+        );
+        const withdrawalsSnapshot = await getDocs(withdrawalsQuery);
+        const withdrawalsData = withdrawalsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          const user = usersData.find(u => u.id === data.user_id);
+          return {
+            id: doc.id,
+            ...data,
+            user_name: data.user_name || user?.name || '성명 없음',
+            user_email: data.user_email || user?.phone || '정보 없음',
+            user_phone: (data as any).user_phone || user?.phone || '',
+            payment_method: user?.paymentMethod || '정보 없음'
+          } as WithdrawalRequest & { payment_method?: string };
+        });
+        setWithdrawalRequests(withdrawalsData);
+      } catch (withdrawalError) {
+        console.error('환불신청 데이터 로드 실패 (권한 또는 인덱스 문제):', withdrawalError);
+      }
 
       const messagesQuery = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
       const messagesSnapshot = await getDocs(messagesQuery);
@@ -216,6 +221,9 @@ export default function Admin() {
           setPriceTiers(configData.priceTiers);
         } else {
           setPriceTiers([]);
+        }
+        if (configData.defaultAmount) {
+          setDefaultAmount(configData.defaultAmount);
         }
       }
 
@@ -397,9 +405,11 @@ export default function Admin() {
 
   const handleSaveConfig = async () => {
     if (priceTiers.length === 0) return alert('최소 1개 이상의 정책이 필요합니다.');
+    if (!defaultAmount || defaultAmount <= 0) return alert('기본 참가비를 올바르게 입력해주세요.');
     try {
       await setDoc(doc(db, 'config', 'event_settings'), {
         priceTiers,
+        defaultAmount,
         updated_at: serverTimestamp(),
       }, { merge: true });
       alert('저장되었습니다.');
@@ -585,8 +595,10 @@ export default function Admin() {
         return <AlimtalkSettings user={user} />;
       case 'config':
         return (
-          <ConfigManagement 
+          <ConfigManagement
             priceTiers={priceTiers}
+            defaultAmount={defaultAmount}
+            onDefaultAmountChange={setDefaultAmount}
             onAddTier={() => setPriceTiers([...priceTiers, { id: Date.now().toString(), label: '', startDate: '', endDate: '', amount: 0, active: true }])}
             onRemoveTier={(id) => setPriceTiers(priceTiers.filter(t => t.id !== id))}
             onUpdateTier={handleUpdatePriceTier}

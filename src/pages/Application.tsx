@@ -48,6 +48,9 @@ export default function Application() {
                 <p className="font-semibold text-blue-900">
                   행사 당일, 반갑게 뵙겠습니다.
                 </p>
+                <p className="font-semibold text-red-600 mt-2">
+                  ※ 행사 불참 시 참가비는 환불되지 않습니다.
+                </p>
               </div>
 
               <div className="text-xs text-gray-400 pt-1 md:text-sm md:pt-2">

@@ -124,12 +124,11 @@ export const confirmPayment = functions.region('asia-northeast3').https.onReques
       }
 
       if (expectedAmount === null) {
-        console.warn('ERROR: No active price tier found for Date:', today);
-        res.status(400).json({
-          success: false,
-          error: '현재 설정된 기간별 등록비가 없습니다. 관리자에게 문의해주세요.'
-        });
-        return;
+        // No active price tier — fall back to the admin-configured default amount.
+        // This prevents tier gaps from causing payment failures after Toss has charged.
+        const defaultAmount = eventConfigDoc.exists ? (eventConfigDoc.data()?.defaultAmount ?? 280000) : 280000;
+        expectedAmount = defaultAmount;
+        console.warn(`No active price tier found for Date: ${today}. Using admin defaultAmount: ${expectedAmount}`);
       }
 
       if (requestedAmount !== expectedAmount) {
@@ -184,44 +183,57 @@ export const confirmPayment = functions.region('asia-northeast3').https.onReques
           userId = paymentData.customerKey.replace('user_', '');
         }
 
-        await db.runTransaction(async (transaction) => {
-          if (userId) {
-            const userRef = db.collection('users').doc(userId);
-            transaction.update(userRef, {
-              paymentStatus: true,
-              updated_at: admin.firestore.FieldValue.serverTimestamp(),
-            });
-          }
-
-          const paymentRef = db.collection('payments').doc();
-          transaction.set(paymentRef, {
-            user_id: userId || 'anonymous',
-            payment_key: paymentKey,
-            order_id: orderId,
-            amount: requestedAmount,
-            status: 'completed',
-            payment_type: 'membership',
-            created_at: admin.firestore.FieldValue.serverTimestamp(),
-            updated_at: admin.firestore.FieldValue.serverTimestamp(),
-            approvedAt: admin.firestore.FieldValue.serverTimestamp(),
-            payment_data: paymentData
-          });
-        });
-        
-        // Send 신청완료 Alimtalk
+        // Fetch user data once — used for user_name in payment record and alimtalk
+        let fetchedUserData: any = null;
         if (userId) {
           try {
-            const userDoc = await db.collection('users').doc(userId).get();
-            const userData = userDoc.data();
-            if (userData && userData.phone && userData.name) {
-              const alimtalkService = await getAlimtalkService();
-              await alimtalkService.sendWelcomeMessage(
-                userData.phone,
-                userData.name,
-                requestedAmount,
-                orderId
-              );
-            }
+            const userSnap = await db.collection('users').doc(userId).get();
+            fetchedUserData = userSnap.data() || null;
+          } catch (e) {
+            console.warn('Failed to fetch user data for payment record:', e);
+          }
+        }
+
+        // 1. Create payment record first (critical audit trail — must always succeed)
+        const paymentRef = db.collection('payments').doc();
+        await paymentRef.set({
+          user_id: userId || 'anonymous',
+          user_name: fetchedUserData?.name || '',
+          payment_key: paymentKey,
+          order_id: orderId,
+          amount: requestedAmount,
+          status: 'completed',
+          payment_type: 'membership',
+          created_at: admin.firestore.FieldValue.serverTimestamp(),
+          updated_at: admin.firestore.FieldValue.serverTimestamp(),
+          approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+          payment_data: paymentData
+        });
+
+        // 2. Update user payment status (set with merge so it works even if doc is missing)
+        if (userId) {
+          try {
+            const userRef = db.collection('users').doc(userId);
+            await userRef.set({
+              paymentStatus: true,
+              updated_at: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+          } catch (userUpdateError) {
+            console.error(`Failed to update paymentStatus for user ${userId}:`, userUpdateError);
+            // Payment record already saved — do not rethrow
+          }
+        }
+        
+        // Send 신청완료 Alimtalk (reuse already-fetched user data)
+        if (fetchedUserData && fetchedUserData.phone && fetchedUserData.name) {
+          try {
+            const alimtalkService = await getAlimtalkService();
+            await alimtalkService.sendWelcomeMessage(
+              fetchedUserData.phone,
+              fetchedUserData.name,
+              requestedAmount,
+              orderId
+            );
           } catch (alimtalkError) {
             console.error('Failed to send registration complete Alimtalk:', alimtalkError);
           }
@@ -1123,18 +1135,9 @@ export const cancelPaymentByAdmin = functions.region('asia-northeast3').https.on
     }
 
     const paymentKey = paymentData.payment_key;
-    
-    // Load Toss secret key
-    let tossSecretKey = process.env.TOSS_SECRET_KEY;
-    try {
-      const siteConfigDoc = await db.collection('settings').doc('site_config').get();
-      if (!tossSecretKey && siteConfigDoc.exists) {
-        tossSecretKey = siteConfigDoc.data().pg_config?.secretKey;
-      }
-    } catch (configError) {
-      console.warn('Failed to load site config for Toss key:', configError);
-    }
 
+    // Load Toss secret key (same source as confirmPayment)
+    const tossSecretKey = process.env.TOSS_SECRET_KEY || functions.config().toss?.secret_key;
     if (!tossSecretKey) {
       throw new functions.https.HttpsError('failed-precondition', '결제 시크릿 키가 설정되지 않았습니다.');
     }

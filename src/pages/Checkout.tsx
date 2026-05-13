@@ -37,8 +37,9 @@ export default function Checkout() {
           setAmount(data.amount || 0);
           setPriceLabel(data.priceLabel || '');
 
-          // Sign in if token is available but user is not authenticated
-          if (!auth.currentUser && data.token) {
+          // Always sign in with the new user's token when temp data exists
+          // (handles case where a previous user session is still active)
+          if (data.token) {
             try {
               await signInWithCustomToken(auth, data.token);
               console.log('User signed in with custom token for checkout');
@@ -62,16 +63,26 @@ export default function Checkout() {
               const eventConfigDoc = await getDoc(doc(db, 'config', 'event_settings'));
               if (eventConfigDoc.exists()) {
                 const eventData = eventConfigDoc.data();
+                const fallback = eventData.defaultAmount || 280000;
                 if (eventData.priceTiers && Array.isArray(eventData.priceTiers)) {
                   const today = new Date().toISOString().split('T')[0];
                   const activeTier = eventData.priceTiers.find((tier: any) =>
                     tier.active && today >= tier.startDate && today <= tier.endDate
                   );
                   if (activeTier) {
-                    setAmount(activeTier.amount);
+                    setAmount(activeTier.amount || fallback);
                     setPriceLabel(activeTier.label);
+                  } else {
+                    setAmount(fallback);
+                    setPriceLabel('일반예약');
                   }
+                } else {
+                  setAmount(fallback);
+                  setPriceLabel('일반예약');
                 }
+              } else {
+                setAmount(280000);
+                setPriceLabel('일반예약');
               }
             } else {
               navigate('/application');
@@ -118,12 +129,15 @@ export default function Checkout() {
       }
     };
 
-    // Need to handle auth state initialization
-    const unsubscribe = auth.onAuthStateChanged(() => {
-      init();
+    // Run init once on mount (handles both already-logged-in and token-based flows)
+    let cancelled = false;
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      // Only run on the initial state resolution (first fire)
+      unsubscribe();
+      if (!cancelled) init();
     });
 
-    return () => unsubscribe();
+    return () => { cancelled = true; unsubscribe(); };
   }, [navigate]);
 
   const handlePayment = async (method: 'card' | 'transfer' | 'manual_vbank') => {
@@ -141,7 +155,9 @@ export default function Checkout() {
       const tossPayments = await loadTossPayments(clientKey);
       
       const storedData = JSON.parse(localStorage.getItem('temp_application_data') || '{}');
-      const userId = auth.currentUser?.uid || storedData.userId;
+      // Prefer storedData.userId (Application flow) over auth.currentUser (MyPage flow)
+      // to avoid using a stale previous session's UID when registering a new user
+      const userId = storedData.userId || auth.currentUser?.uid;
 
       if (!userId) {
         alert('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');

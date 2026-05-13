@@ -85,7 +85,7 @@ export default function ApplicationCheck() {
 
   const goToMyPage = async () => {
     if (!customToken) {
-      navigate('/mypage', { state: { userData } });
+      setError('인증 토큰이 없습니다. 다시 조회해 주세요.');
       return;
     }
 
